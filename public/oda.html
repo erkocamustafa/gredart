@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pixelo - Oyun</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1b1f3b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      gap: 16px;
+      overscroll-behavior: none;
+    }
+
+    .header { text-align: center; }
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 8px;
+      background: linear-gradient(135deg, #43e8d8, #4ade80);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    #subtitle {
+      font-size: 12px;
+      color: #4ade80;
+      letter-spacing: 3px;
+      opacity: 0.7;
+      margin-top: 5px;
+    }
+
+    #main {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
+      max-width: 1000px;
+      align-items: center;
+    }
+
+    @media (min-width: 900px) {
+        #main { 
+            flex-direction: row; 
+            align-items: flex-start; 
+            justify-content: center; 
+        }
+    }
+
+    #board-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      background: #252a4a;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+      border: 1px solid #2e3460;
+      width: 100%;
+      max-width: 620px; 
+      overflow: hidden;
+    }
+
+    /* Tam Ekran Modu Stilleri */
+    #board-section:fullscreen {
+      max-width: 100vw;
+      height: 100vh;
+      border-radius: 0;
+      border: none;
+      justify-content: center;
+      background: #1b1f3b;
+    }
+    #board-section:fullscreen #canvas-wrapper {
+      max-width: 80vh;
+    }
+
+    /* YENİ: Ultra İnce ve Yatay Bildirim Çubuğu */
+    #game-status-bar {
+      width: 100%;
+      background: #1b1f3b;
+      border: 1px solid #2e3460;
+      border-radius: 10px;
+      padding: 10px 16px;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #game-message { font-size: 13px; font-weight: 500; color: #e2e8f0; display: flex; align-items: center; gap: 8px;}
+    #game-word-highlight { color: #43e8d8; font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+    #game-timer { font-family: monospace; font-size: 18px; font-weight: 700; color: #4ade80; letter-spacing: 1px; }
+
+    .action-btn { 
+        background: #43e8d8; color: #1b1f3b; border: none; padding: 12px 18px; 
+        border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 13px; 
+        transition: transform 0.1s, opacity 0.2s; 
+        width: 100%;
+    }
+    .action-btn.secondary { background: #f77f00; color: white; }
+    .action-btn:hover { opacity: 0.9; }
+    .action-btn:active { transform: scale(0.95); }
+
+    #canvas-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 576px; 
+      aspect-ratio: 1 / 1; 
+      border-radius: 4px;
+      overflow: visible;
+      touch-action: none; 
+      background-color: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
+    canvas { width: 100%; height: 100%; display: block; cursor: crosshair; image-rendering: pixelated; }
+
+    #canvas-lock-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(27, 31, 59, 0.4); z-index: 10; display: block; cursor: not-allowed;
+    }
+
+    #hover-cursor {
+      position: absolute; pointer-events: none; border: 2px solid rgba(255,255,255,0.8);
+      border-radius: 2px; display: none; z-index: 20; box-shadow: 0 0 6px rgba(0,0,0,0.5);
+    }
+
+    #palette { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    .color-btn { width: 34px; height: 34px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: transform 0.1s;}
+    .color-btn.selected { border-color: #43e8d8; transform: scale(1.15); box-shadow: 0 0 0 2px #252a4a, 0 0 0 4px #43e8d8;}
+    
+    #eraser-btn {
+      width: 34px; height: 34px; border-radius: 50%; border: 3px solid transparent;
+      cursor: pointer; background: #2e3460; display: flex; align-items: center;
+      justify-content: center; font-size: 14px; color: white; transition: transform 0.1s;
+    }
+    #eraser-btn.selected { border-color: #43e8d8; transform: scale(1.15); box-shadow: 0 0 0 2px #252a4a, 0 0 0 4px #43e8d8;}
+
+    /* Sağ Panel */
+    #side-panel { width: 100%; max-width: 620px; display: flex; flex-direction: column; gap: 16px; }
+    @media (min-width: 900px) { #side-panel { width: 260px; max-width: 260px; } }
+
+    .panel-card { background: #252a4a; border-radius: 14px; padding: 18px; border: 1px solid #2e3460; box-shadow: 0 4px 20px rgba(0,0,0,0.3);}
+    .panel-title { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #43e8d8; margin-bottom: 12px; }
+    
+    #room-name { font-size: 18px; font-weight: 700; color: #fff; }
+    #room-meta { font-size: 13px; color: #6b7280; margin-top: 4px;}
+
+    #cooldown-wrap { display: flex; flex-direction: column; gap: 8px; }
+    #cooldown-top { display: flex; justify-content: space-between; align-items: center; }
+    #cooldown-status { font-size: 13px; font-weight: 700; color: #4ade80; }
+    #cooldown-timer-text { font-size: 13px; color: #6b7280; }
+    #cooldown-bar-bg { width: 100%; height: 6px; background: #1b1f3b; border-radius: 3px; overflow: hidden; }
+    #cooldown-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #43e8d8, #4ade80); }
+
+    #players-list { display: flex; flex-direction: column; gap: 12px; }
+    .player-row { display: flex; align-items: center; gap: 10px; }
+    .player-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: white; flex-shrink: 0; }
+    .player-info { flex: 1; overflow: hidden; }
+    .player-name { font-size: 14px; font-weight: 600; color: #e2e8f0; display:flex; justify-content:space-between; align-items: center; white-space: nowrap; text-overflow: ellipsis;}
+    .player-pixels { font-size: 12px; color: #6b7280; margin-top: 2px;}
+    .player-bar-bg { width: 100%; height: 4px; background: #1b1f3b; border-radius: 2px; margin-top: 4px; overflow: hidden;}
+    .player-bar { height: 100%; transition: width 0.3s ease; }
+
+    #name-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(27, 31, 59, 0.85); backdrop-filter: blur(5px); z-index: 1000; justify-content: center; align-items: center; }
+    .modal-content { background: #252a4a; border: 1px solid #43e8d8; border-radius: 20px; padding: 32px; width: 340px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+    .modal-content h2 { color: #fff; font-size: 22px; margin-bottom: 8px; letter-spacing: 2px; }
+    .modal-content p { color: #4ade80; font-size: 13px; margin-bottom: 24px; opacity: 0.8; }
+    .modal-content input { width: 100%; background: #1b1f3b; border: 1px solid #2e3460; border-radius: 10px; padding: 14px; color: white; font-size: 16px; text-align: center; margin-bottom: 20px; outline: none; text-transform: uppercase; font-family: 'Segoe UI', sans-serif; }
+    
+    #chat-card { display: flex; flex-direction: column; gap: 10px; }
+
+    #chatBox {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 200px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: thin;
+      scrollbar-color: #2e3460 transparent;
+      padding-right: 4px;
+    }
+
+    .chat-msg {
+      font-size: 12px;
+      color: #e2e8f0;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    .chat-msg .chat-name {
+      font-weight: 700;
+      margin-right: 4px;
+    }
+    .chat-msg.mine .chat-name { color: #43e8d8; }
+    .chat-msg:not(.mine) .chat-name { color: #9b5de5; }
+
+    #chat-input-row {
+      display: flex;
+      gap: 6px;
+    }
+    #chatInput {
+      flex: 1;
+      background: #1b1f3b;
+      border: 1px solid #2e3460;
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: white;
+      font-size: 13px;
+      letter-spacing: 0;
+      text-transform: none;
+      outline: none;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    #chatInput:focus { border-color: #43e8d8; }
+    #chatSendBtn {
+      background: #43e8d8;
+      color: #1b1f3b;
+      border: none;
+      border-radius: 8px;
+      width: 34px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: opacity 0.2s;
+    }
+    #chatSendBtn:hover { opacity: 0.85; }
+    #spectator-banner {
+      display: none;
+      width: 100%;
+      background: linear-gradient(135deg, #f77f00, #ffd166);
+      color: #1b1f3b;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    #spectator-count-badge {
+      font-size: 11px;
+      color: #6b7280;
+      text-align: center;
+      margin-top: 4px;
+      letter-spacing: 1px;
+    }
+
+    #spectator-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+
+    .spectator-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .spectator-name {
+      font-size: 13px;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .promote-btn {
+      background: #2e3460;
+      color: #43e8d8;
+      border: none;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .promote-btn:hover { background: #3a4270; }
+
+    #promotion-toggle-row {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #2e3460;
+    }
+
+    #promotion-toggle-label {
+      font-size: 12px;
+      color: #6b7280;
+      letter-spacing: 1px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #2e3460;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 14px; height: 14px;
+      left: 3px; top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .toggle-switch input:checked + .toggle-slider { background: #43e8d8; }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); }
+    
+    #slot-toast {
+      display: none;
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #43e8d8, #4ade80);
+      color: #1b1f3b;
+      border-radius: 14px;
+      padding: 14px 24px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      z-index: 500;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      text-align: center;
+    }
+    #slot-toast.visible { display: flex; }
+    .toast-actions { display: flex; gap: 8px; }
+    .toast-btn {
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .toast-btn:hover { opacity: 0.85; }
+    .toast-accept { background: #1b1f3b; color: #43e8d8; }
+    .toast-decline { background: rgba(27,31,59,0.4); color: #1b1f3b; }
+  
+    #mute-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #252a4a;
+      border: 1px solid #2e3460;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 400;
+      transition: border-color 0.2s;
+    }
+    #mute-btn:hover { border-color: #43e8d8; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>PIXELO</h1>
+    <div id="subtitle">BERABER ÇİZ</div>
+  </div>
+
+  <div id="main">
+    <div id="board-section">
+      <div id="game-status-bar">
+        <div id="game-message">Oyuncu bekleniyor...</div>
+        
+        <div id="host-top-controls" style="display:none; gap:8px;">
+          <button class="action-btn" style="padding:6px 12px; width:auto;" onclick="startGame('timed')">⏱️ SÜRELİ</button>
+          <button class="action-btn secondary" style="padding:6px 12px; width:auto;" onclick="startGame('free')">🎨 SERBEST</button>
+        </div>
+
+        <div id="host-finish-controls" style="display:none; gap:8px;">
+          <button id="finish-btn" class="action-btn secondary" style="padding:6px 12px; width:auto;" onclick="finishRoom()">✅ BİTİR</button>
+        </div>
+
+        <div id="end-top-controls" style="display:none; gap:8px;">
+          <button class="action-btn" style="padding:6px 12px; width:auto;" onclick="downloadCanvas()">🖼️ İNDİR</button>
+          <button id="replay-btn" class="action-btn secondary" style="padding:6px 12px; width:auto; display:none;" onclick="resetRoom()">🔄 YENİ TUR</button>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div id="game-timer" style="display:none;"></div>
+            <button id="fullscreen-btn" style="background:none; border:none; color:#43e8d8; font-size:20px; cursor:pointer; transition:transform 0.1s;" title="Tam Ekran">⛶</button>
+        </div>
+      </div>
+
+      <div id="spectator-banner">👁️ İZLEYİCİ MODUNDASIN — Oda Dolu</div>
+      <div id="canvas-wrapper">
+        <canvas id="canvas"></canvas>
+        <div id="hover-cursor"></div>
+        <div id="canvas-lock-overlay"></div>
+      </div>
+      
+      <div id="palette"></div>
+    </div>
+
+    <div id="side-panel">
+      <div class="panel-card">
+        <div class="panel-title">FIRÇA BEKLEMESİ</div>
+        <div id="cooldown-wrap">
+          <div id="cooldown-top">
+            <span id="cooldown-status">KİLİTLİ</span>
+            <span id="cooldown-timer-text"></span>
+          </div>
+          <div id="cooldown-bar-bg"><div id="cooldown-bar"></div></div>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-title">KATILIMCILAR</div>
+        <div id="players-list"></div>
+
+        <div id="spectators-section" style="display:none; margin-top:12px;">
+          <div class="panel-title" style="margin-bottom:8px;">İZLEYİCİLER</div>
+          <button id="show-spectators-btn" class="action-btn secondary" style="padding:8px 12px; width:auto; display:none;">İzleyicileri Göster</button>
+          <div id="spectator-list" style="display:none;"></div>
+        </div>
+
+        <div id="promotion-toggle-row">
+          <span id="promotion-toggle-label">İzleyici Katılımına İzin Ver</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="promotion-toggle" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-title">ODA BİLGİSİ</div>
+        <div id="room-name">Yükleniyor...</div>
+        <div id="room-meta"></div>
+        <div id="spectator-count-badge"></div>
+        <button class="action-btn" style="background:#2e3460; color:#43e8d8; margin-top:12px;" onclick="copyLink(this)">🔗 LİNKİ KOPYALA</button>
+      </div>
+      <div class="panel-card" id="chat-card">
+        <div class="panel-title">SOHBET</div>
+        <div id="chatBox"></div>
+        <div id="chat-input-row">
+          <input id="chatInput" type="text" placeholder="Mesaj yaz..." maxlength="120" autocomplete="off" />
+          <button id="chatSendBtn">↑</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="name-modal">
+    <div class="modal-content">
+      <h2>ODAYA KATIL</h2>
+      <p>Oyuna girmek için bir ad belirle</p>
+      <input type="text" id="modal-name-input" placeholder="OYUN İÇİ ADIN" maxlength="12">
+      <button id="modal-join-btn" class="action-btn" style="padding:14px; font-size:15px;">OYUNA GİR</button>
+    </div>
+  </div>
+
+  <div id="slot-toast">
+    🎉 Bir yer açıldı! Oyuna katılmak ister misin?
+    <div class="toast-actions">
+      <button class="toast-btn toast-accept" id="toast-accept-btn">KATIL</button>
+      <button class="toast-btn toast-decline" id="toast-decline-btn">İzlemeye Devam Et</button>
+    </div>
+  </div>
+  <button id="mute-btn" title="Sesi Aç/Kapat">🔊</button>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const pathParts = window.location.pathname.split('/');
+    const roomKod = pathParts[pathParts.length - 1].toUpperCase();
+
+    const BOARD_SIZE = 32;
+    const CELL_SIZE = 18; 
+    const COOLDOWN = 1000;
+    const EMPTY_COLOR = '#ffffff';
+    const COLORS = ['#ffffff', '#1a1a2e', '#e63946', '#4361ee', '#2dc653', '#ffd166', '#f77f00', '#9b5de5'];
+
+    let selectedColor = COLORS[2];
+    let eraserActive = false;
+    let lastPlaced = 0;
+    let cooldownInterval = null;
+    let players = {};
+    let myId = null;
+    let hostId = null; 
+    let gameState = 'waiting';
+    let currentMode = null;
+    let isSpectator = false;
+    let spectators = {};
+    let allowPromotion = true;
+    // =====================
+    // SOUND ENGINE
+    // =====================
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    // Lazy-init AudioContext on first user interaction (browser requirement)
+    function getAudioCtx() {
+      if (!audioCtx) audioCtx = new AudioContext();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function playPixelClick() {
+      if (isMuted) return;
+      const ctx = getAudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.06);
+
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.08);
+    }
+
+    function playCountdownWarning() {
+      if (isMuted) return;
+      const ctx = getAudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+
+      gain.gain.setValueAtTime(0.06, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.15);
+    }
+
+    function playGameEnd() {
+      if (isMuted) return;
+      const ctx = getAudioCtx();
+      // Three ascending notes
+      [523, 659, 784].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+        const start = ctx.currentTime + i * 0.15;
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(0.12, start + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.4);
+
+        osc.start(start);
+        osc.stop(start + 0.4);
+      });
+    }
+
+    function playPlayerJoined() {
+      if (isMuted) return;
+      const ctx = getAudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.1);
+
+      gain.gain.setValueAtTime(0.07, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.15);
+    }
+    let isMuted = false;
+    document.getElementById('mute-btn').addEventListener('click', () => {
+      isMuted = !isMuted;
+      document.getElementById('mute-btn').textContent = isMuted ? '🔇' : '🔊';
+    });
+    // =====================
+
+    // Pinch-to-zoom state
+    let canvasScale = 1;
+    let canvasTranslateX = 0;
+    let canvasTranslateY = 0;
+    let pinchStartDist = 0;
+    let pinchStartScale = 1;
+    let pinchStartMidX = 0;
+    let pinchStartMidY = 0;
+    let pinchStartTX = 0;
+    let pinchStartTY = 0;
+    const MIN_SCALE = 1;
+    const MAX_SCALE = 8;
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const hoverCursor = document.getElementById('hover-cursor');
+    const displaySize = BOARD_SIZE * CELL_SIZE; 
+    canvas.width = displaySize;
+    canvas.height = displaySize;
+
+    const socket = io();
+
+    // İsim Girişi
+    const nameModal = document.getElementById('name-modal');
+    const modalNameInput = document.getElementById('modal-name-input');
+    const modalJoinBtn = document.getElementById('modal-join-btn');
+
+    socket.on('connect', () => {
+      myId = socket.id;
+      const playerName = localStorage.getItem('pixeloName');
+      const sessionToken = localStorage.getItem('pixeloSession_' + roomKod);
+
+      if (!playerName) {
+        // Always ask for name first, then join
+        nameModal.style.display = 'flex';
+        modalNameInput.focus();
+
+        const doJoin = () => {
+          const val = modalNameInput.value.trim().toUpperCase();
+          if (!val) return;
+          localStorage.setItem('pixeloName', val);
+          nameModal.style.display = 'none';
+          socket.emit('join_room', { kod: roomKod, name: val, token: sessionToken });
+        };
+
+        modalJoinBtn.addEventListener('click', doJoin);
+        modalNameInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') doJoin();
+        });
+      } else {
+        socket.emit('join_room', { kod: roomKod, name: playerName, token: sessionToken });
+      }
+    });
+
+    socket.on('session_token', (token) => {
+      localStorage.setItem('pixeloSession_' + roomKod, token);
+    });
+
+    socket.on('room_error', (msg) => { alert(msg); window.location.replace('/'); });
+
+    // UI Yönetimi Değişkenleri
+    const gameMessageEl = document.getElementById('game-message');
+    const gameTimerEl = document.getElementById('game-timer');
+    const hostTopControls = document.getElementById('host-top-controls');
+    const hostFinishControls = document.getElementById('host-finish-controls');
+    const endTopControls = document.getElementById('end-top-controls');
+    const replayBtn = document.getElementById('replay-btn');
+    const canvasLock = document.getElementById('canvas-lock-overlay');
+    const cdStatusEl = document.getElementById('cooldown-status');
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    const boardSection = document.getElementById('board-section');
+    const spectatorSection = document.getElementById('spectators-section');
+    const showSpectatorsBtn = document.getElementById('show-spectators-btn');
+    const spectatorList = document.getElementById('spectator-list');
+
+    // Tam Ekran İşlevi
+    fullscreenBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+            boardSection.requestFullscreen().catch(err => {
+                console.log(`Tam ekran hatası: ${err.message}`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    });
+
+    function updateUIBasedOnState() {
+      // Panelleri gizle
+      hostTopControls.style.display = 'none';
+      endTopControls.style.display = 'none';
+      
+      // Yalnızca oyun oynanıyorsa ve mod süreliyse sayacı göster (Eski bug'ın çözümü)
+      gameTimerEl.style.display = (gameState === 'playing' && currentMode === 'timed') ? 'block' : 'none';
+      
+      canvasLock.style.display = (gameState === 'playing') ? 'none' : 'block';
+      if (isSpectator) {
+        canvasLock.style.display = 'block';
+        return;
+      }
+      if (gameState === 'waiting') {
+        cdStatusEl.textContent = 'KİLİTLİ'; cdStatusEl.style.color = '#e63946';
+        hostFinishControls.style.display = 'none';
+        
+        if (myId === hostId) {
+          hostTopControls.style.display = 'flex';
+          gameMessageEl.innerHTML = 'MOD SEÇ:';
+        } else {
+          hostTopControls.style.display = 'none';
+          gameMessageEl.textContent = 'Oda Sahibinin Başlatması Bekleniyor...';
+        }
+      } 
+      else if (gameState === 'playing') {
+        hostTopControls.style.display = 'none';
+        hostFinishControls.style.display = (myId === hostId && currentMode === 'free') ? 'flex' : 'none';
+      }
+      else if (gameState === 'finished') {
+        hostFinishControls.style.display = 'none';
+        endTopControls.style.display = 'flex';
+        // Sadece host yeni tur başlatabilir
+        replayBtn.style.display = (myId === hostId) ? 'block' : 'none';
+      }
+    }
+
+    // Socket Eventleri
+    socket.on('room_info', (data) => {
+      hostId = data.hostId;
+      gameState = data.status;
+      currentMode = data.mode;
+      document.getElementById('room-name').textContent = 'Oda: ' + data.kod;
+      document.getElementById('room-meta').textContent = '32×32 Pikseller';
+      
+      if(data.status === 'playing') {
+          gameMessageEl.innerHTML = (data.mode === 'free') 
+            ? `<span id="game-word-highlight">🎨 SERBEST MOD</span>`
+            : `Kelime: <span id="game-word-highlight">${data.word}</span>`;
+          if(data.mode === 'timed') { 
+            updateTimer(data.timeLeft); 
+          }
+          cdStatusEl.textContent = 'HAZIR'; cdStatusEl.style.color = '#4ade80';
+      }
+      updateUIBasedOnState();
+    });
+
+    socket.on('game_started', (data) => {
+      gameState = 'playing';
+      currentMode = data.mode;
+      gameMessageEl.innerHTML = (data.mode === 'free') 
+        ? `<span id="game-word-highlight">🎨 SERBEST MOD</span>`
+        : `Kelime: <span id="game-word-highlight">${data.word}</span>`;
+        
+      if(data.mode === 'timed') { 
+        updateTimer(data.timeLeft);
+      }
+      cdStatusEl.textContent = 'HAZIR'; cdStatusEl.style.color = '#4ade80';
+      updateUIBasedOnState();
+    });
+
+    socket.on('time_update', (timeLeft) => { updateTimer(timeLeft); if (timeLeft <= 10 && timeLeft > 0) playCountdownWarning();});
+
+    socket.on('game_ended', () => {
+      playGameEnd();
+      gameState = 'finished';
+      gameMessageEl.innerHTML = `<span style="color:#e63946;">SÜRE BİTTİ!</span> ESERİNİZ KAYDEDİLDİ.`;
+      gameTimerEl.style.display = 'none';
+      cdStatusEl.textContent = 'KİLİTLİ'; cdStatusEl.style.color = '#e63946';
+      updateUIBasedOnState();
+    });
+
+    socket.on('room_reset', () => {
+      gameState = 'waiting';
+      currentMode = null;
+      updateUIBasedOnState();
+    });
+
+    socket.on('joined_as_spectator', () => {
+      isSpectator = true;
+      document.getElementById('spectator-banner').style.display = 'block';
+      // Lock canvas permanently for spectators
+      document.getElementById('canvas-lock-overlay').style.display = 'block';
+      document.getElementById('palette').style.opacity = '0.3';
+      document.getElementById('palette').style.pointerEvents = 'none';
+      // Hide host controls even if somehow triggered
+      document.getElementById('host-top-controls').style.display = 'none';
+    });
+    socket.on('spectator_promotion_toggled', (allowed) => {
+      allowPromotion = allowed;
+      const toggle = document.getElementById('promotion-toggle');
+      if (toggle) toggle.checked = allowed;
+    });
+
+    showSpectatorsBtn.addEventListener('click', () => {
+      if (spectatorList.style.display === 'block') {
+        spectatorList.style.display = 'none';
+        showSpectatorsBtn.textContent = 'İzleyicileri Göster';
+        return;
+      }
+      socket.emit('request_spectator_list');
+    });
+
+    socket.on('spectator_list', (data) => {
+      spectators = data;
+      renderSpectators();
+      spectatorList.style.display = 'block';
+      showSpectatorsBtn.textContent = 'İzleyicileri Gizle';
+    });
+
+    socket.on('promotion_denied', () => {
+      slotToast.classList.remove('visible');
+      const badge = document.getElementById('spectator-count-badge');
+      const prev = badge.textContent;
+      badge.textContent = 'Host katılıma izin vermiyor.';
+      setTimeout(() => badge.textContent = prev, 3000);
+    });
+
+    const slotToast = document.getElementById('slot-toast');
+    let slotToastTimer = null;
+
+    socket.on('slot_available', () => {
+      if (!isSpectator) return;
+      slotToast.classList.add('visible');
+      slotToastTimer = setTimeout(() => {
+        slotToast.classList.remove('visible');
+      }, 15000);
+    });
+
+    socket.on('slot_gone', () => {
+      slotToast.classList.remove('visible');
+      const badge = document.getElementById('spectator-count-badge');
+      const prev = badge.textContent;
+      badge.textContent = 'Yer kapıldı, sıra sende değil.';
+      setTimeout(() => badge.textContent = prev, 3000);
+    });
+
+    socket.on('promoted_to_player', ({ avatarColor }) => {
+      isSpectator = false;
+      slotToast.classList.remove('visible');
+      if (slotToastTimer) clearTimeout(slotToastTimer);
+      document.getElementById('spectator-banner').style.display = 'none';
+      document.getElementById('palette').style.opacity = '1';
+      document.getElementById('palette').style.pointerEvents = 'auto';
+      updateUIBasedOnState();
+    });
+
+    document.getElementById('toast-accept-btn').addEventListener('click', () => {
+      socket.emit('claim_slot');
+    });
+
+    document.getElementById('toast-decline-btn').addEventListener('click', () => {
+      slotToast.classList.remove('visible');
+      if (slotToastTimer) clearTimeout(slotToastTimer);
+    });
+
+    document.getElementById('promotion-toggle').addEventListener('change', () => {
+      socket.emit('toggle_spectator_promotion');
+    });
+
+    socket.on('spectator_count', (count) => {
+      const badge = document.getElementById('spectator-count-badge');
+      const isHost = myId === hostId;
+      badge.textContent = count > 0 ? `👁️ ${count} izleyici` : '';
+      showSpectatorsBtn.style.display = isHost && count > 0 ? 'block' : 'none';
+      spectatorSection.style.display = isHost && count > 0 ? 'block' : 'none';
+      if (!isHost || count === 0) {
+        spectatorList.style.display = 'none';
+        showSpectatorsBtn.textContent = 'İzleyicileri Göster';
+      }
+    });
+
+    socket.on('kicked', (msg) => { alert(msg); window.location.replace('/'); });
+
+    // Yardımcı Buton Fonksiyonları
+    function startGame(mode) { socket.emit('start_game', { mode }); }
+    function resetRoom() { socket.emit('reset_room'); }
+    function finishRoom() { socket.emit('finish_game'); }
+    function downloadCanvas() {
+        const link = document.createElement('a');
+        link.download = `pixelo-${roomKod}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    }
+    function updateTimer(seconds) {
+      const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+      const s = (seconds % 60).toString().padStart(2, '0');
+      gameTimerEl.textContent = `${m}:${s}`;
+    }
+
+    // Çizim ve Tablo
+    socket.on('board_state', (board) => {
+      for (let y = 0; y < BOARD_SIZE; y++) for (let x = 0; x < BOARD_SIZE; x++) drawCell(x, y, board[y][x]);
+    });
+    socket.on('pixel_placed', ({ x, y, color }) => drawCell(x, y, color));
+    let prevPlayerCount = 0;
+    socket.on('players_update', (data) => {
+      const newCount = Object.keys(data).length;
+      if (newCount > prevPlayerCount && prevPlayerCount > 0) playPlayerJoined();
+      prevPlayerCount = newCount;
+      players = data;
+      renderPlayers();
+    });
+
+    function handleDraw(clientX, clientY) {
+      if (isSpectator) return; 
+      if (gameState !== 'playing') return;
+      const now = Date.now();
+      if (now - lastPlaced < COOLDOWN) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      
+      const x = Math.floor(((clientX - rect.left) * scaleX) / CELL_SIZE);
+      const y = Math.floor(((clientY - rect.top) * scaleY) / CELL_SIZE);
+
+      if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE) return;
+
+      const color = eraserActive ? EMPTY_COLOR : selectedColor;
+      lastPlaced = now;
+      socket.emit('place_pixel', { x, y, color });
+      playPixelClick();
+      startCooldown();
+    }
+
+    canvas.addEventListener('click', (e) => handleDraw(e.clientX, e.clientY));
+    function applyCanvasTransform() {
+      canvasWrapper.style.transformOrigin = '0 0';
+      canvasWrapper.style.transform = `translate(${canvasTranslateX}px, ${canvasTranslateY}px) scale(${canvasScale})`;
+    }
+
+    function getTouchDist(t1, t2) {
+      return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    }
+
+    const canvasWrapper = document.getElementById('canvas-wrapper');
+
+    canvasWrapper.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        pinchStartDist = getTouchDist(e.touches[0], e.touches[1]);
+        pinchStartScale = canvasScale;
+        pinchStartMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        pinchStartMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        pinchStartTX = canvasTranslateX;
+        pinchStartTY = canvasTranslateY;
+      } else if (e.touches.length === 1) {
+        e.preventDefault();
+        handleDraw(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: false });
+
+    canvasWrapper.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const dist = getTouchDist(e.touches[0], e.touches[1]);
+        let newScale = pinchStartScale * (dist / pinchStartDist);
+        newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, newScale));
+
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+        // Zoom toward the pinch midpoint
+        const scaleDiff = newScale - pinchStartScale;
+        const rect = canvasWrapper.getBoundingClientRect();
+        canvasTranslateX = pinchStartTX - (pinchStartMidX - rect.left) * scaleDiff;
+        canvasTranslateY = pinchStartTY - (pinchStartMidY - rect.top) * scaleDiff;
+        canvasScale = newScale;
+        applyCanvasTransform();
+      }
+    }, { passive: false });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if(gameState !== 'playing') return;
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = Math.floor(((e.clientX - rect.left) * scaleX) / CELL_SIZE);
+      const y = Math.floor(((e.clientY - rect.top) * scaleY) / CELL_SIZE);
+      
+      hoverCursor.style.display = 'block';
+      const displayCellWidth = rect.width / BOARD_SIZE;
+      hoverCursor.style.width = displayCellWidth + 'px';
+      hoverCursor.style.height = displayCellWidth + 'px';
+      hoverCursor.style.left = (x * displayCellWidth) + 'px';
+      hoverCursor.style.top = (y * displayCellWidth) + 'px';
+      
+      hoverCursor.style.borderColor = eraserActive ? 'rgba(255,255,255,0.6)' : (selectedColor === '#ffffff' ? 'rgba(200,200,200,0.8)' : selectedColor);
+      hoverCursor.style.background = eraserActive ? 'rgba(255,255,255,0.15)' : 'transparent';
+    });
+    canvas.addEventListener('mouseleave', () => { hoverCursor.style.display = 'none'; });
+
+    function drawCell(x, y, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+      if (color === EMPTY_COLOR) {
+        ctx.strokeStyle = 'rgba(100,110,160,0.25)'; ctx.lineWidth = 1;
+        ctx.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+      }
+    }
+    for (let y = 0; y < BOARD_SIZE; y++) for (let x = 0; x < BOARD_SIZE; x++) drawCell(x, y, EMPTY_COLOR);
+
+    function startCooldown() {
+      const statusEl = document.getElementById('cooldown-status');
+      const timerEl = document.getElementById('cooldown-timer-text');
+      const bar = document.getElementById('cooldown-bar');
+      let elapsed = 0;
+      if (cooldownInterval) clearInterval(cooldownInterval);
+      cooldownInterval = setInterval(() => {
+        elapsed += 50;
+        bar.style.width = Math.min((elapsed / COOLDOWN) * 100, 100) + '%';
+        if (elapsed >= COOLDOWN) {
+          clearInterval(cooldownInterval); bar.style.width = '0%';
+          statusEl.textContent = 'HAZIR'; statusEl.style.color = '#4ade80'; timerEl.textContent = '';
+        } else {
+          statusEl.textContent = 'BEKLE'; statusEl.style.color = '#f093fb';
+          timerEl.textContent = ((COOLDOWN - elapsed) / 1000).toFixed(1) + 's';
+        }
+      }, 50);
+    }
+    function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g, tag => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag]));
+    }
+    function renderPlayers() {
+      const list = document.getElementById('players-list'); list.innerHTML = '';
+      const sorted = Object.values(players).sort((a, b) => b.pixels - a.pixels);
+      const maxPixels = Math.max(sorted[0]?.pixels || 1, 1);
+      sorted.forEach(p => {
+      const isMe = p.id === myId; const isHost = p.id === hostId;
+      const safeName = escapeHTML(p.name);
+      const kickBtn = (myId === hostId && !isMe) ? `<button onclick="kickPlayer('${p.id}')" style="background:none;border:none;color:#e63946;cursor:pointer;font-weight:bold;font-size:14px;">✕</button>` : '';
+      const row = document.createElement('div'); row.className = 'player-row';
+      row.innerHTML = `<div class="player-avatar" style="background:${p.avatarColor};position:relative;">${safeName[0]}${isHost ? '<span style="position:absolute;top:-8px;left:-5px;font-size:14px;">👑</span>' : ''}</div>
+        <div class="player-info"><div class="player-name"><span>${safeName}${isMe ? '<small style="color:#43e8d8;font-size:10px;"> (sen)</small>' : ''}</span>${kickBtn}</div>
+        <div class="player-pixels">${p.pixels} piksel</div><div class="player-bar-bg"><div class="player-bar" style="width:${(p.pixels/maxPixels)*100}%;background:${p.avatarColor}"></div></div></div>`;
+      list.appendChild(row);
+      });
+    }
+    function renderSpectators() {
+      const list = document.getElementById('spectator-list');
+      const toggleRow = document.getElementById('promotion-toggle-row');
+      list.innerHTML = '';
+
+      const spectatorListItems = Object.values(spectators);
+      toggleRow.style.display = myId === hostId ? 'flex' : 'none';
+
+      spectatorListItems.forEach(s => {
+        const row = document.createElement('div');
+        row.className = 'spectator-row';
+
+        const promoteBtn = (myId === hostId && Object.keys(players).length < 6)
+          ? `<button class="promote-btn" onclick="promoteSpectator('${s.id}')">▲ OYUNCU YAP</button>`
+          : '';
+
+        row.innerHTML = `
+          <div class="spectator-name">👁️ <span>${s.name}</span></div>
+          ${promoteBtn}
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    function promoteSpectator(targetId) {
+      socket.emit('promote_spectator', targetId);
+    }
+
+    function kickPlayer(targetId) { if(confirm("Bu oyuncuyu odadan atmak istediğine emin misin?")) socket.emit('kick_player', targetId); }
+
+    const palette = document.getElementById('palette');
+    COLORS.forEach(color => {
+      const btn = document.createElement('div');
+      btn.className = 'color-btn' + (color === selectedColor ? ' selected' : ''); btn.style.background = color;
+      if (color === '#ffffff') btn.style.boxShadow = '0 0 0 1px #555 inset';
+      btn.addEventListener('click', () => {
+        eraserActive = false; document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
+        document.getElementById('eraser-btn').classList.remove('selected'); btn.classList.add('selected'); selectedColor = color;
+      });
+      palette.appendChild(btn);
+    });
+    const eraserBtn = document.createElement('div'); eraserBtn.id = 'eraser-btn'; eraserBtn.textContent = '✕';
+    eraserBtn.addEventListener('click', () => {
+      eraserActive = !eraserActive; eraserBtn.classList.toggle('selected', eraserActive);
+      if (eraserActive) document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
+    });
+    palette.appendChild(eraserBtn);
+
+    function copyLink(btn) {
+      navigator.clipboard.writeText(window.location.href);
+      btn.textContent = '✓ KOPYALANDI'; setTimeout(() => btn.textContent = '🔗 LİNKİ KOPYALA', 2000);
+    }
+
+    const MAX_CHAT_MESSAGES = 50;
+
+    function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+      socket.emit('send_message', msg);
+      input.value = '';
+    }
+
+    document.getElementById('chatSendBtn').addEventListener('click', sendMessage);
+    document.getElementById('chatInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    socket.on('receive_message', (data) => {
+      const box = document.getElementById('chatBox');
+      const isMe = data.name === (players[myId]?.name);
+      
+      const div = document.createElement('div');
+      div.className = 'chat-msg' + (isMe ? ' mine' : '');
+      
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'chat-name';
+      nameSpan.textContent = data.name + ':';   // textContent = XSS safe
+      
+      const msgSpan = document.createElement('span');
+      msgSpan.textContent = data.message;        // textContent = XSS safe
+      
+      div.appendChild(nameSpan);
+      div.appendChild(msgSpan);
+      box.appendChild(div);
+
+      // Trim old messages to keep DOM lean
+      while (box.children.length > MAX_CHAT_MESSAGES) {
+        box.removeChild(box.firstChild);
+      }
+
+      // Auto-scroll to bottom
+      box.scrollTop = box.scrollHeight;
+    });
+  </script>
+</body>
+</html>

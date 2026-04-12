@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pixelo Lobi</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1b1f3b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+      gap: 32px;
+    }
+
+    .logo {
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 48px;
+      font-weight: 800;
+      letter-spacing: 12px;
+      background: linear-gradient(135deg, #43e8d8, #4ade80);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .tagline {
+      font-size: 12px;
+      color: #4ade80;
+      letter-spacing: 3px;
+      opacity: 0.7;
+      margin-top: 6px;
+    }
+
+    .card {
+      background: #252a4a;
+      border: 1px solid #2e3460;
+      border-radius: 20px;
+      padding: 28px;
+      width: 340px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #43e8d8;
+      opacity: 0.7;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #43e8d8, #4ade80);
+      color: #1b1f3b;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .btn-primary:hover { opacity: 0.9; transform: scale(1.02); }
+    .btn-primary:active { transform: scale(0.98); }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #3a4060;
+      font-size: 12px;
+    }
+
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #2e3460;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    input {
+      flex: 1;
+      background: #1b1f3b;
+      border: 1px solid #2e3460;
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: white;
+      font-size: 16px;
+      font-family: 'Segoe UI', sans-serif;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input::placeholder {
+      letter-spacing: 1px;
+      text-transform: none;
+      color: #3a4060;
+    }
+
+    input:focus { border-color: #43e8d8; }
+
+    .btn-secondary {
+      background: #2e3460;
+      color: #43e8d8;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-secondary:hover { background: #3a4270; }
+
+    #error-msg {
+      font-size: 12px;
+      color: #e63946;
+      min-height: 16px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo">
+    <h1>PIXELO</h1>
+    <div class="tagline">BERABER ÇİZ</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">KİMLİĞİN</div>
+    <input type="text" id="name-input" placeholder="Oyun içi adın (Zorunlu)" maxlength="12" />
+
+    <div class="divider"></div>
+
+    <div class="card-title">YENİ ODA</div>
+    <button class="btn-primary" id="create-btn">Oda Kur</button>
+
+    <div class="divider">veya</div>
+
+    <div class="card-title">ODAYA KATIL</div>
+    <div class="input-row">
+      <input type="text" id="kod-input" placeholder="Oda kodu" maxlength="6" style="text-transform: uppercase;" />
+      <button class="btn-secondary" id="join-btn">Gir</button>
+    </div>
+    <div id="error-msg"></div>
+    <div style="text-align:center; margin-top:4px;">
+      <a href="/gallery" style="font-size:12px; color:#43e8d8; opacity:0.7; letter-spacing:1px; text-decoration:none;">🖼️ GALERİYİ GÖRÜNTÜLE</a>
+    </div>
+  </div>
+
+  <script>
+    const nameInput = document.getElementById('name-input');
+    const createBtn = document.getElementById('create-btn');
+    const joinBtn = document.getElementById('join-btn');
+    const kodInput = document.getElementById('kod-input');
+    const errorMsg = document.getElementById('error-msg');
+
+    // Eğer daha önce isim girdiyse, hafızadan kutuya doldur
+    if (localStorage.getItem('pixeloName')) {
+      nameInput.value = localStorage.getItem('pixeloName');
+    }
+
+    function checkName() {
+      const name = nameInput.value.trim().toUpperCase();
+      if (!name) {
+        errorMsg.textContent = 'Lütfen önce bir ad gir!';
+        return null;
+      }
+      localStorage.setItem('pixeloName', name);
+      return name;
+    }
+    
+    createBtn.addEventListener('click', async () => {
+      if (!checkName()) return;
+
+      createBtn.textContent = 'Kuruluyor...';
+      createBtn.disabled = true;
+
+      const res = await fetch('/api/oda-kur', { method: 'POST' });
+      const data = await res.json();
+      window.location.href = '/oda/' + data.kod;
+    });
+
+    joinBtn.addEventListener('click', () => katil());
+
+    async function katil() {
+      if (!checkName()) return;
+
+      const kod = kodInput.value.trim().toUpperCase();
+      if (kod.length !== 6) {
+        errorMsg.textContent = 'Kod 6 karakter olmalı.';
+        return;
+      }
+
+      const res = await fetch('/api/oda/' + kod);
+      const data = await res.json();
+
+      if (!data.exists) {
+        errorMsg.textContent = 'Böyle bir oda bulunamadı.';
+        return;
+      }
+
+      if (data.playerCount >= data.maxPlayers) {
+        errorMsg.textContent = 'Bu oda dolu (maksimum 6 kişi).';
+        return;
+      }
+
+      window.location.href = '/oda/' + kod;
+    }
+  </script>
+
+</body>
+</html>
