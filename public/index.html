@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pixelo Lobi</title>
+  <title>GredArt Lobi</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -143,7 +143,7 @@
 <body>
 
   <div class="logo">
-    <h1>PIXELO</h1>
+    <h1>GredArt</h1>
     <div class="tagline">BERABER ÇİZ</div>
   </div>
 
@@ -177,8 +177,8 @@
     const errorMsg = document.getElementById('error-msg');
 
     // Eğer daha önce isim girdiyse, hafızadan kutuya doldur
-    if (localStorage.getItem('pixeloName')) {
-      nameInput.value = localStorage.getItem('pixeloName');
+    if (localStorage.getItem('gredartName')) {
+      nameInput.value = localStorage.getItem('gredartName');
     }
 
     function checkName() {
@@ -187,7 +187,7 @@
         errorMsg.textContent = 'Lütfen önce bir ad gir!';
         return null;
       }
-      localStorage.setItem('pixeloName', name);
+      localStorage.setItem('gredartName', name);
       return name;
     }
     

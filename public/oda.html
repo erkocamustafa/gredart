@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pixelo - Oyun</title>
+  <title>GredArt - Oyun</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -386,7 +386,7 @@
 <body>
 
   <div class="header">
-    <h1>PIXELO</h1>
+    <h1>GredArt</h1>
     <div id="subtitle">BERABER ÇİZ</div>
   </div>
 
@@ -642,8 +642,8 @@
 
     socket.on('connect', () => {
       myId = socket.id;
-      const playerName = localStorage.getItem('pixeloName');
-      const sessionToken = localStorage.getItem('pixeloSession_' + roomKod);
+      const playerName = localStorage.getItem('gredartName');
+      const sessionToken = localStorage.getItem('gredartSession_' + roomKod);
 
       if (!playerName) {
         // Always ask for name first, then join
@@ -653,7 +653,7 @@
         const doJoin = () => {
           const val = modalNameInput.value.trim().toUpperCase();
           if (!val) return;
-          localStorage.setItem('pixeloName', val);
+          localStorage.setItem('gredartName', val);
           nameModal.style.display = 'none';
           socket.emit('join_room', { kod: roomKod, name: val, token: sessionToken });
         };
@@ -668,7 +668,7 @@
     });
 
     socket.on('session_token', (token) => {
-      localStorage.setItem('pixeloSession_' + roomKod, token);
+      localStorage.setItem('gredartSession_' + roomKod, token);
     });
 
     socket.on('room_error', (msg) => { alert(msg); window.location.replace('/'); });
@@ -889,7 +889,7 @@
     function finishRoom() { socket.emit('finish_game'); }
     function downloadCanvas() {
         const link = document.createElement('a');
-        link.download = `pixelo-${roomKod}.png`;
+        link.download = `gredart-${roomKod}.png`;
         link.href = canvas.toDataURL("image/png");
         link.click();
     }

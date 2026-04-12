@@ -5,7 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./pixelo.db');
+const db = new sqlite3.Database('./gredart.db');
 
 const app = express();
 const server = http.createServer(app);
