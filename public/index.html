@@ -197,9 +197,21 @@
       createBtn.textContent = 'Kuruluyor...';
       createBtn.disabled = true;
 
-      const res = await fetch('/api/oda-kur', { method: 'POST' });
-      const data = await res.json();
-      window.location.href = '/oda/' + data.kod;
+      try {
+        const res = await fetch('/api/oda-kur', { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) {
+          errorMsg.textContent = data.error || 'Oda kurulamadı, tekrar dene.';
+          createBtn.textContent = 'Oda Kur';
+          createBtn.disabled = false;
+          return;
+        }
+        window.location.href = '/oda/' + data.kod;
+      } catch (err) {
+        errorMsg.textContent = 'Bağlantı hatası, tekrar dene.';
+        createBtn.textContent = 'Oda Kur';
+        createBtn.disabled = false;
+      }
     });
 
     joinBtn.addEventListener('click', () => katil());

@@ -4,8 +4,13 @@ const { Server } = require('socket.io');
 const path = require('path');
 const crypto = require('crypto');
 
-const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./gredart.db');
+const { createClient } = require('@libsql/client');
+
+// Uzak Turso veritabanı varsa onu kullan (kalıcı, ücretsiz), yoksa yerel SQLite dosyası.
+// Yerel geliştirmede hiçbir env değişkeni gerekmez; otomatik olarak ./gredart.db kullanılır.
+const db = process.env.TURSO_DATABASE_URL
+  ? createClient({ url: process.env.TURSO_DATABASE_URL, authToken: process.env.TURSO_AUTH_TOKEN })
+  : createClient({ url: 'file:' + (process.env.DB_PATH || './gredart.db') });
 
 const app = express();
 const server = http.createServer(app);
@@ -16,6 +21,11 @@ const PORT = process.env.PORT || 3000;
 const BOARD_SIZE = 32;
 const MAX_PLAYERS = 6;
 const GAME_DURATION = 180; // Süreli mod için 3 dakika (Saniye)
+
+// Kötüye kullanım koruması
+const MAX_ROOMS = 500;                 // Aynı anda açık kalabilecek maks. oda
+const ROOM_CREATE_COOLDOWN_MS = 3000;  // Aynı IP iki oda arasında bu kadar beklemeli
+const roomCreateTimes = {};            // ip -> son oda kurma zamanı
 
 // Oyun Kelimeleri ve Renkler
 const WORD_LIST = [
@@ -65,6 +75,11 @@ setInterval(() => {
       delete sessions[token];
     }
   }
+  // Eski oda-kurma zaman damgalarını temizle (bellek sızıntısını önler)
+  const now = Date.now();
+  for (const ip in roomCreateTimes) {
+    if (now - roomCreateTimes[ip] > 60_000) delete roomCreateTimes[ip];
+  }
 }, 5 * 60 * 1000);
 
 // Statik Dosyalar ve Routing
@@ -84,6 +99,17 @@ app.get('/oda/:kod', (req, res) => {
 
 // API Uçları (Endpoints)
 app.post('/api/oda-kur', (req, res) => {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+
+  if (roomCreateTimes[ip] && now - roomCreateTimes[ip] < ROOM_CREATE_COOLDOWN_MS) {
+    return res.status(429).json({ error: 'Çok hızlı oda kuruyorsun, biraz bekle.' });
+  }
+  if (Object.keys(rooms).length >= MAX_ROOMS) {
+    return res.status(503).json({ error: 'Sunucu şu an dolu, lütfen sonra tekrar dene.' });
+  }
+
+  roomCreateTimes[ip] = now;
   const kod = createRoom();
   res.json({ kod });
 });
@@ -100,62 +126,65 @@ app.get('/api/oda/:kod', (req, res) => {
     res.json({ exists: false });
   }
 });
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS boards (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      roomCode TEXT,
-      board TEXT,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `, (err) => {
-    if (err) return console.error('DB create table hatası:', err.message);
+db.execute(`
+  CREATE TABLE IF NOT EXISTS boards (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    roomCode TEXT,
+    board TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`).catch((err) => console.error('DB create table hatası:', err.message));
 
-    db.all(`PRAGMA table_info(boards)`, (infoErr, columns) => {
-      if (infoErr) return console.error('DB schema kontrol hatası:', infoErr.message);
-      if (!columns.some((col) => col.name === 'createdAt')) {
-        db.run(`ALTER TABLE boards ADD COLUMN createdAt DATETIME`, (alterErr) => {
-          if (alterErr) {
-            console.error('DB migration hatası:', alterErr.message);
-          } else {
-            db.run(`UPDATE boards SET createdAt = CURRENT_TIMESTAMP WHERE createdAt IS NULL`, (updateErr) => {
-              if (updateErr) console.error('DB migration update hatası:', updateErr.message);
-              else console.log('boards tablosuna createdAt sütunu eklendi.');
-            });
-          }
-        });
-      }
-    });
-  });
-});
+// Galeriyi kaydet (hem süreli mod bitişinde hem de "Bitir" butonunda kullanılır)
+function saveBoardToGallery(roomCode, board) {
+  return db.execute({
+    sql: 'INSERT INTO boards (roomCode, board, createdAt) VALUES (?, ?, CURRENT_TIMESTAMP)',
+    args: [roomCode, JSON.stringify(board)],
+  })
+    .then(() => console.log(`Tablo kaydedildi: ${roomCode}`))
+    .catch((err) => console.error('Galeri kayıt hatası:', err.message));
+}
 // Gallery - list all saved boards (most recent first)
-app.get('/api/gallery', (req, res) => {
-  db.all(
-    'SELECT id, roomCode, createdAt FROM boards ORDER BY id DESC LIMIT 50',
-    [],
-    (err, rows) => {
-      if (err) return res.status(500).json({ error: 'DB hatası' });
-      res.json(rows);
-    }
-  );
+app.get('/api/gallery', async (req, res) => {
+  try {
+    const result = await db.execute('SELECT id, roomCode, createdAt FROM boards ORDER BY id DESC LIMIT 50');
+    res.json(result.rows.map((r) => ({ id: r.id, roomCode: r.roomCode, createdAt: r.createdAt })));
+  } catch (err) {
+    console.error('Galeri listeleme hatası:', err.message);
+    res.status(500).json({ error: 'DB hatası' });
+  }
 });
 
 // Gallery - get a single board's pixel data
-app.get('/api/gallery/:id', (req, res) => {
+app.get('/api/gallery/:id', async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: 'Geçersiz id' });
-  db.get(
-    'SELECT id, roomCode, board, createdAt FROM boards WHERE id = ?',
-    [id],
-    (err, row) => {
-      if (err || !row) return res.status(404).json({ error: 'Bulunamadı' });
-      res.json({ ...row, board: JSON.parse(row.board) });
-    }
-  );
+  try {
+    const result = await db.execute({
+      sql: 'SELECT id, roomCode, board, createdAt FROM boards WHERE id = ?',
+      args: [id],
+    });
+    const row = result.rows[0];
+    if (!row) return res.status(404).json({ error: 'Bulunamadı' });
+    res.json({ id: row.id, roomCode: row.roomCode, createdAt: row.createdAt, board: JSON.parse(row.board) });
+  } catch (err) {
+    res.status(404).json({ error: 'Bulunamadı' });
+  }
 });
 app.get('/gallery', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'gallery.html'));
 });
+// Bir yer açıldığında bekleyen izleyicilere haber ver
+function notifyOpenSlot(kod) {
+  const room = rooms[kod];
+  if (!room) return;
+  if (room.spectators && Object.keys(room.spectators).length > 0
+      && room.allowSpectatorPromotion
+      && Object.keys(room.players).length < MAX_PLAYERS) {
+    io.to(kod).emit('slot_available');
+  }
+}
+
 // Soket İletişimi (Gerçek Zamanlı Altyapı)
 io.on('connection', (socket) => {
   let currentRoom = null;
@@ -218,6 +247,7 @@ io.on('connection', (socket) => {
       const newToken = crypto.randomBytes(16).toString('hex');
       sessions[newToken] = { name: saved.name, avatarColor: saved.avatarColor, pixels: saved.pixels, roomKod: kod, wasHost: room.hostId === socket.id };
 
+      socket.data.sessionToken = newToken;
       socket.emit('session_token', newToken);
       socket.emit('board_state', room.board);
       socket.emit('room_info', { kod, maxPlayers: MAX_PLAYERS, hostId: room.hostId, status: room.status, mode: room.mode, word: room.word, timeLeft: room.timeLeft });
@@ -254,6 +284,7 @@ io.on('connection', (socket) => {
     const newToken = crypto.randomBytes(16).toString('hex');
     sessions[newToken] = { name: playerName, avatarColor, pixels: 0, roomKod: kod, wasHost: room.hostId === socket.id };
 
+    socket.data.sessionToken = newToken;
     socket.emit('session_token', newToken);
     socket.emit('board_state', room.board);
     socket.emit('room_info', { kod, maxPlayers: MAX_PLAYERS, hostId: room.hostId, status: room.status, mode: room.mode, word: room.word, timeLeft: room.timeLeft });
@@ -288,14 +319,7 @@ io.on('connection', (socket) => {
           clearInterval(currentRoom.timerInterval);
           currentRoom.status = 'finished';
           io.to(currentKod).emit('game_ended');
-          db.run(
-            'INSERT INTO boards (roomCode, board, createdAt) VALUES (?, ?, CURRENT_TIMESTAMP)',
-            [currentKod, JSON.stringify(currentRoom.board)],
-            (err) => {
-              if (err) console.error('Galeri kayıt hatası:', err.message);
-              else console.log(`Tablo kaydedildi: ${currentKod}`);
-            }
-          );
+          saveBoardToGallery(currentKod, currentRoom.board);
         }
       }, 1000);
       
@@ -324,14 +348,7 @@ io.on('connection', (socket) => {
     currentRoom.status = 'finished';
     io.to(currentKod).emit('game_ended');
 
-    db.run(
-      'INSERT INTO boards (roomCode, board, createdAt) VALUES (?, ?, CURRENT_TIMESTAMP)',
-      [currentKod, JSON.stringify(currentRoom.board)],
-      (err) => {
-        if (err) console.error('Galeri kayıt hatası:', err.message);
-        else console.log(`Tablo kaydedildi: ${currentKod}`);
-      }
-    );
+    saveBoardToGallery(currentKod, currentRoom.board);
   });
 
   // 3. Yeniden Oyna (Tabloyu Sıfırla)
@@ -390,6 +407,7 @@ io.on('connection', (socket) => {
       
       delete currentRoom.players[targetId];
       io.to(currentKod).emit('players_update', currentRoom.players);
+      notifyOpenSlot(currentKod); // Atılan oyuncudan boşalan yeri izleyicilere duyur
     }
   });
 
@@ -430,6 +448,7 @@ io.on('connection', (socket) => {
     const newToken = crypto.randomBytes(16).toString('hex');
     sessions[newToken] = { name: spectatorName, avatarColor, pixels: 0, roomKod: currentKod, wasHost: false };
 
+    socket.data.sessionToken = newToken;
     socket.emit('session_token', newToken);
     socket.emit('promoted_to_player', { avatarColor });
     io.to(currentKod).emit('players_update', currentRoom.players);
@@ -475,6 +494,7 @@ io.on('connection', (socket) => {
 
     const targetSocket = io.sockets.sockets.get(targetId);
     if (targetSocket) {
+      targetSocket.data.sessionToken = newToken;
       targetSocket.emit('session_token', newToken);
       targetSocket.emit('promoted_to_player', { avatarColor });
     }
@@ -494,12 +514,11 @@ io.on('connection', (socket) => {
       sendSpectatorListToHost();
       return;
     }
-    for (const token in sessions) {
-      if (sessions[token].roomKod === currentKod && sessions[token].name === currentRoom.players[socket.id]?.name) {
-        sessions[token].pixels = currentRoom.players[socket.id]?.pixels || 0;
-        sessions[token].wasHost = currentRoom.hostId === socket.id;
-        break;
-      }
+    // Oturumu doğrudan bu sokete bağlı token üzerinden güncelle (isim eşleştirmesi güvenilmezdi)
+    const myToken = socket.data.sessionToken;
+    if (myToken && sessions[myToken] && currentRoom.players[socket.id]) {
+      sessions[myToken].pixels = currentRoom.players[socket.id].pixels || 0;
+      sessions[myToken].wasHost = currentRoom.hostId === socket.id;
     }
 
     delete currentRoom.players[socket.id];
@@ -526,6 +545,7 @@ io.on('connection', (socket) => {
         });
       }
       io.to(currentKod).emit('players_update', currentRoom.players);
+      notifyOpenSlot(currentKod); // Çıkan oyuncudan boşalan yeri izleyicilere duyur
     }
   });
 
