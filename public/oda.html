@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>GredArt</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -86,12 +86,24 @@
 
     #canvas-wrapper {
       position: relative; width: 100%; max-width: 576px; aspect-ratio: 1 / 1;
-      border-radius: 6px; overflow: visible; touch-action: none;
+      border-radius: 6px; overflow: hidden; touch-action: none;
       background-color: #fff; box-shadow: 0 0 0 1px var(--border), 0 8px 24px rgba(0,0,0,0.5);
+      user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
     }
+    #canvas-pan { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
     canvas { width: 100%; height: 100%; display: block; cursor: crosshair; image-rendering: pixelated; }
     #canvas-lock-overlay { position: absolute; inset: 0; background: rgba(18,21,43,0.45); z-index: 10; display: block; cursor: not-allowed; border-radius: 6px; }
-    #hover-cursor { position: absolute; pointer-events: none; border: 2px solid rgba(255,255,255,0.85); border-radius: 2px; display: none; z-index: 20; box-shadow: 0 0 6px rgba(0,0,0,0.5); }
+    #hover-cursor { position: absolute; pointer-events: none; border: 2px solid rgba(255,255,255,0.85); border-radius: 2px; display: none; z-index: 5; box-shadow: 0 0 6px rgba(0,0,0,0.5); }
+    #zoom-controls { position: absolute; right: 8px; bottom: 8px; z-index: 30; display: flex; flex-direction: column; gap: 6px; }
+    .zoom-btn {
+      width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--border);
+      background: rgba(18,21,43,0.78); color: var(--accent); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      transition: opacity 0.2s, transform 0.08s; padding: 0;
+    }
+    .zoom-btn:active { transform: scale(0.92); }
+    .zoom-btn svg { width: 18px; height: 18px; }
+    #zoom-reset { display: none; font-family: 'Sora', sans-serif; font-size: 12px; font-weight: 700; }
 
     #palette { display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; max-width: 576px; }
     .color-btn { width: 30px; height: 30px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.25); transition: transform 0.1s; }
@@ -184,6 +196,26 @@
     #mute-btn { position: fixed; bottom: 20px; right: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 50%; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; color: var(--accent); cursor: pointer; z-index: 400; transition: border-color 0.2s; }
     #mute-btn:hover { border-color: var(--accent); }
     #mute-btn svg { width: 20px; height: 20px; }
+
+    /* ===== Mobil optimizasyon ===== */
+    @media (max-width: 640px) {
+      body { padding: 8px; gap: 10px; }
+      h1 { font-size: 22px; }
+      #subtitle { letter-spacing: 3px; margin-top: 2px; font-size: 10px; }
+      #main { gap: 10px; }
+      #board-section { padding: 10px; border-radius: 14px; gap: 12px; max-width: 100%; }
+      #canvas-wrapper { max-width: none; }
+      #game-status-bar { padding: 8px 10px; }
+      #game-message { font-size: 12px; }
+      #game-timer { font-size: 16px; }
+      #palette { gap: 8px; max-width: 100%; }
+      .color-btn, #eraser-btn { width: 36px; height: 36px; }
+      #side-panel { gap: 12px; max-width: 100%; }
+      .panel-card { padding: 14px; }
+      #chatBox { max-height: 150px; }
+      #mute-btn { width: 40px; height: 40px; bottom: 12px; right: 12px; }
+      .zoom-btn { width: 40px; height: 40px; }
+    }
   </style>
 </head>
 <body>
@@ -240,9 +272,17 @@
         <span data-i18n="spectator_mode">İZLEYİCİ MODUNDASIN — Oda dolu</span>
       </div>
       <div id="canvas-wrapper">
-        <canvas id="canvas"></canvas>
-        <div id="hover-cursor"></div>
+        <div id="canvas-pan">
+          <canvas id="canvas"></canvas>
+          <div id="hover-cursor"></div>
+        </div>
         <div id="canvas-lock-overlay"></div>
+        <div id="zoom-controls">
+          <button id="zoom-in" class="zoom-btn" title="Yakınlaştır" aria-label="Yakınlaştır">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6m6 9-3.5-3.5"/></svg>
+          </button>
+          <button id="zoom-reset" class="zoom-btn" title="Yakınlaştırmayı sıfırla" aria-label="Sıfırla">1:1</button>
+        </div>
       </div>
 
       <div id="palette"></div>
@@ -434,14 +474,16 @@
     });
     // =====================
 
-    // Pinch-to-zoom state
+    // Pan & zoom state
     let canvasScale = 1, canvasTranslateX = 0, canvasTranslateY = 0;
-    let pinchStartDist = 0, pinchStartScale = 1, pinchStartMidX = 0, pinchStartMidY = 0, pinchStartTX = 0, pinchStartTY = 0;
-    const MIN_SCALE = 1, MAX_SCALE = 8;
+    let pinchStartDist = 0, pinchStartScale = 1, pinchContentX = 0, pinchContentY = 0;
+    let panStartX = 0, panStartY = 0, panStartTX = 0, panStartTY = 0, touchMoved = false;
+    const MIN_SCALE = 1, MAX_SCALE = 8, MOVE_THRESHOLD = 10;
 
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const hoverCursor = document.getElementById('hover-cursor');
+    const canvasPan = document.getElementById('canvas-pan');
     canvas.width = CANVAS_PX;
     canvas.height = CANVAS_PX;
 
@@ -709,59 +751,127 @@
       startCooldown();
     }
 
-    canvas.addEventListener('click', (e) => handleDraw(e.clientX, e.clientY));
-    function applyCanvasTransform() {
-      canvasWrapper.style.transformOrigin = '0 0';
-      canvasWrapper.style.transform = `translate(${canvasTranslateX}px, ${canvasTranslateY}px) scale(${canvasScale})`;
-    }
-    function getTouchDist(t1, t2) { return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY); }
     const canvasWrapper = document.getElementById('canvas-wrapper');
+    const zoomResetBtn = document.getElementById('zoom-reset');
+    const zoomInBtn = document.getElementById('zoom-in');
+
+    function getTouchDist(t1, t2) { return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY); }
+
+    // Tuvali görüntü alanı (viewport) içinde tut — dışarı fırlamayı engeller.
+    function clampTranslate() {
+      const vp = canvasWrapper.clientWidth;
+      const minT = vp - vp * canvasScale; // <= 0
+      canvasTranslateX = Math.min(0, Math.max(minT, canvasTranslateX));
+      canvasTranslateY = Math.min(0, Math.max(minT, canvasTranslateY));
+      if (canvasScale <= 1.0001) { canvasTranslateX = 0; canvasTranslateY = 0; }
+    }
+    function applyCanvasTransform() {
+      clampTranslate();
+      canvasPan.style.transform = `translate(${canvasTranslateX}px, ${canvasTranslateY}px) scale(${canvasScale})`;
+      zoomResetBtn.style.display = canvasScale > 1.0001 ? 'flex' : 'none';
+    }
+    // (focalX, focalY) ekran noktasını sabit tutarak yakınlaştır.
+    function setZoom(newScale, focalX, focalY) {
+      newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, newScale));
+      const rect = canvasWrapper.getBoundingClientRect();
+      const fx = focalX - rect.left, fy = focalY - rect.top;
+      const cx = (fx - canvasTranslateX) / canvasScale;
+      const cy = (fy - canvasTranslateY) / canvasScale;
+      canvasScale = newScale;
+      canvasTranslateX = fx - cx * newScale;
+      canvasTranslateY = fy - cy * newScale;
+      applyCanvasTransform();
+    }
+    function resetZoom() { canvasScale = 1; canvasTranslateX = 0; canvasTranslateY = 0; applyCanvasTransform(); }
+
+    zoomResetBtn.addEventListener('click', resetZoom);
+    zoomInBtn.addEventListener('click', () => {
+      const rect = canvasWrapper.getBoundingClientRect();
+      setZoom(canvasScale * 1.6, rect.left + rect.width / 2, rect.top + rect.height / 2);
+    });
+    window.addEventListener('resize', applyCanvasTransform);
+    document.addEventListener('fullscreenchange', resetZoom);
+
+    // Fare tıklaması ile piksel koy (masaüstü)
+    canvas.addEventListener('click', (e) => handleDraw(e.clientX, e.clientY));
+    // Masaüstü tekerlek ile yakınlaştırma
+    canvasWrapper.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      setZoom(canvasScale * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX, e.clientY);
+    }, { passive: false });
+
+    const onZoomControls = (e) => e.target.closest && e.target.closest('#zoom-controls');
 
     canvasWrapper.addEventListener('touchstart', (e) => {
+      if (onZoomControls(e)) return;
       if (e.touches.length === 2) {
         e.preventDefault();
         pinchStartDist = getTouchDist(e.touches[0], e.touches[1]);
         pinchStartScale = canvasScale;
-        pinchStartMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-        pinchStartMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-        pinchStartTX = canvasTranslateX;
-        pinchStartTY = canvasTranslateY;
+        const rect = canvasWrapper.getBoundingClientRect();
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+        pinchContentX = (midX - canvasTranslateX) / canvasScale;
+        pinchContentY = (midY - canvasTranslateY) / canvasScale;
+        touchMoved = true; // pinch sonrası piksel koyma
       } else if (e.touches.length === 1) {
         e.preventDefault();
-        handleDraw(e.touches[0].clientX, e.touches[0].clientY);
+        panStartX = e.touches[0].clientX;
+        panStartY = e.touches[0].clientY;
+        panStartTX = canvasTranslateX;
+        panStartTY = canvasTranslateY;
+        touchMoved = false;
       }
     }, { passive: false });
 
     canvasWrapper.addEventListener('touchmove', (e) => {
+      if (onZoomControls(e)) return;
       if (e.touches.length === 2) {
         e.preventDefault();
-        const dist = getTouchDist(e.touches[0], e.touches[1]);
-        let newScale = pinchStartScale * (dist / pinchStartDist);
-        newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, newScale));
-        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-        const scaleDiff = newScale - pinchStartScale;
+        const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, pinchStartScale * (getTouchDist(e.touches[0], e.touches[1]) / pinchStartDist)));
         const rect = canvasWrapper.getBoundingClientRect();
-        canvasTranslateX = pinchStartTX - (pinchStartMidX - rect.left) * scaleDiff;
-        canvasTranslateY = pinchStartTY - (pinchStartMidY - rect.top) * scaleDiff;
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
         canvasScale = newScale;
+        canvasTranslateX = midX - pinchContentX * newScale;
+        canvasTranslateY = midY - pinchContentY * newScale;
         applyCanvasTransform();
+      } else if (e.touches.length === 1) {
+        const dx = e.touches[0].clientX - panStartX;
+        const dy = e.touches[0].clientY - panStartY;
+        if (Math.hypot(dx, dy) > MOVE_THRESHOLD) touchMoved = true;
+        if (canvasScale > 1.0001) { // yakınlaşmışken tek parmak kaydırır
+          e.preventDefault();
+          canvasTranslateX = panStartTX + dx;
+          canvasTranslateY = panStartTY + dy;
+          applyCanvasTransform();
+        }
+      }
+    }, { passive: false });
+
+    // Temiz dokunuş (kaydırma/pinch değil) => piksel koy
+    canvasWrapper.addEventListener('touchend', (e) => {
+      if (onZoomControls(e)) return;
+      if (!touchMoved && e.touches.length === 0 && e.changedTouches.length === 1) {
+        e.preventDefault();
+        handleDraw(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
       }
     }, { passive: false });
 
     canvas.addEventListener('mousemove', (e) => {
       if (gameState !== 'playing') return;
       const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      const x = Math.floor(((e.clientX - rect.left) * scaleX) / CELL_SIZE);
-      const y = Math.floor(((e.clientY - rect.top) * scaleY) / CELL_SIZE);
+      const cellOnScreen = rect.width / BOARD_SIZE;
+      const x = Math.floor((e.clientX - rect.left) / cellOnScreen);
+      const y = Math.floor((e.clientY - rect.top) / cellOnScreen);
+      if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE) { hoverCursor.style.display = 'none'; return; }
+      // hover-cursor dönüştürülen katmanın içinde olduğu için ölçeklenmemiş hücre boyutu kullanılır
+      const baseCell = canvas.clientWidth / BOARD_SIZE;
       hoverCursor.style.display = 'block';
-      const displayCellWidth = rect.width / BOARD_SIZE;
-      hoverCursor.style.width = displayCellWidth + 'px';
-      hoverCursor.style.height = displayCellWidth + 'px';
-      hoverCursor.style.left = (x * displayCellWidth) + 'px';
-      hoverCursor.style.top = (y * displayCellWidth) + 'px';
+      hoverCursor.style.width = baseCell + 'px';
+      hoverCursor.style.height = baseCell + 'px';
+      hoverCursor.style.left = (x * baseCell) + 'px';
+      hoverCursor.style.top = (y * baseCell) + 'px';
       hoverCursor.style.borderColor = eraserActive ? 'rgba(255,255,255,0.6)' : (selectedColor === '#ffffff' ? 'rgba(200,200,200,0.8)' : selectedColor);
       hoverCursor.style.background = eraserActive ? 'rgba(255,255,255,0.15)' : 'transparent';
     });
