@@ -3,434 +3,257 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GredArt - Oyun</title>
+  <title>GredArt</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg: #12152b;
+      --surface: #1f2342;
+      --surface-2: #262b4d;
+      --border: #313869;
+      --accent: #43e8d8;
+      --accent-2: #4ade80;
+      --text: #eaeefb;
+      --muted: #8b93b8;
+      --danger: #ff6b6b;
+      --warn: #f7a23b;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background: #1b1f3b;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      background: var(--bg);
+      background-image:
+        radial-gradient(1000px 600px at 50% -15%, rgba(67,232,216,0.10), transparent 60%),
+        radial-gradient(800px 600px at 100% 120%, rgba(74,222,128,0.08), transparent 55%);
+      display: flex; flex-direction: column; align-items: center;
       min-height: 100vh;
-      font-family: 'Segoe UI', sans-serif;
-      padding: 20px;
-      gap: 16px;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: var(--text);
+      padding: 20px; gap: 16px;
       overscroll-behavior: none;
     }
-
     .header { text-align: center; }
     h1 {
-      font-size: 32px;
-      font-weight: 800;
-      letter-spacing: 8px;
-      background: linear-gradient(135deg, #43e8d8, #4ade80);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      font-family: 'Sora', sans-serif;
+      font-size: 30px; font-weight: 800; letter-spacing: -0.5px;
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
     }
-    #subtitle {
-      font-size: 12px;
-      color: #4ade80;
-      letter-spacing: 3px;
-      opacity: 0.7;
-      margin-top: 5px;
-    }
+    #subtitle { font-size: 11px; color: var(--accent); letter-spacing: 4px; font-weight: 600; opacity: 0.7; margin-top: 4px; }
 
-    #main {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      width: 100%;
-      max-width: 1000px;
-      align-items: center;
-    }
-
-    @media (min-width: 900px) {
-        #main { 
-            flex-direction: row; 
-            align-items: flex-start; 
-            justify-content: center; 
-        }
-    }
+    #main { display: flex; flex-direction: column; gap: 18px; width: 100%; max-width: 1000px; align-items: center; }
+    @media (min-width: 900px) { #main { flex-direction: row; align-items: flex-start; justify-content: center; } }
 
     #board-section {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      background: #252a4a;
-      padding: 20px;
-      border-radius: 16px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
-      border: 1px solid #2e3460;
-      width: 100%;
-      max-width: 620px; 
-      overflow: hidden;
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent), var(--surface);
+      padding: 20px; border-radius: 18px;
+      box-shadow: 0 18px 44px rgba(0,0,0,0.4);
+      border: 1px solid var(--border);
+      width: 100%; max-width: 620px; overflow: hidden;
     }
+    #board-section:fullscreen { max-width: 100vw; height: 100vh; border-radius: 0; border: none; justify-content: center; background: var(--bg); }
+    #board-section:fullscreen #canvas-wrapper { max-width: 80vh; }
 
-    /* Tam Ekran Modu Stilleri */
-    #board-section:fullscreen {
-      max-width: 100vw;
-      height: 100vh;
-      border-radius: 0;
-      border: none;
-      justify-content: center;
-      background: #1b1f3b;
-    }
-    #board-section:fullscreen #canvas-wrapper {
-      max-width: 80vh;
-    }
-
-    /* YENİ: Ultra İnce ve Yatay Bildirim Çubuğu */
     #game-status-bar {
-      width: 100%;
-      background: #1b1f3b;
-      border: 1px solid #2e3460;
-      border-radius: 10px;
-      padding: 10px 16px;
-      display: flex;
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: center;
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 12px; padding: 10px 14px;
+      display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 10px;
     }
+    #game-message { font-size: 13px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    #game-word-highlight { color: var(--accent); font-size: 14px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+    #game-timer { font-family: 'Sora', monospace; font-size: 18px; font-weight: 700; color: var(--accent-2); letter-spacing: 1px; }
 
-    #game-message { font-size: 13px; font-weight: 500; color: #e2e8f0; display: flex; align-items: center; gap: 8px;}
-    #game-word-highlight { color: #43e8d8; font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
-    #game-timer { font-family: monospace; font-size: 18px; font-weight: 700; color: #4ade80; letter-spacing: 1px; }
-
-    .action-btn { 
-        background: #43e8d8; color: #1b1f3b; border: none; padding: 12px 18px; 
-        border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 13px; 
-        transition: transform 0.1s, opacity 0.2s; 
-        width: 100%;
+    .action-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: #0c1024; border: none;
+      padding: 12px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 13px;
+      font-family: inherit; transition: transform 0.08s, opacity 0.2s; width: 100%;
     }
-    .action-btn.secondary { background: #f77f00; color: white; }
-    .action-btn:hover { opacity: 0.9; }
-    .action-btn:active { transform: scale(0.95); }
+    .action-btn.secondary { background: var(--warn); color: #1c1304; }
+    .action-btn.ghost { background: var(--surface-2); color: var(--accent); border: 1px solid var(--border); }
+    .action-btn:hover { opacity: 0.92; }
+    .action-btn:active { transform: scale(0.97); }
+    .action-btn svg { width: 15px; height: 15px; }
+    .icon-btn {
+      background: none; border: none; color: var(--accent); cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; padding: 4px; transition: transform 0.1s, opacity 0.2s;
+    }
+    .icon-btn:hover { opacity: 0.8; }
+    .icon-btn svg { width: 20px; height: 20px; }
 
     #canvas-wrapper {
-      position: relative;
-      width: 100%;
-      max-width: 576px; 
-      aspect-ratio: 1 / 1; 
-      border-radius: 4px;
-      overflow: visible;
-      touch-action: none; 
-      background-color: white;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      position: relative; width: 100%; max-width: 576px; aspect-ratio: 1 / 1;
+      border-radius: 6px; overflow: visible; touch-action: none;
+      background-color: #fff; box-shadow: 0 0 0 1px var(--border), 0 8px 24px rgba(0,0,0,0.5);
     }
-
     canvas { width: 100%; height: 100%; display: block; cursor: crosshair; image-rendering: pixelated; }
+    #canvas-lock-overlay { position: absolute; inset: 0; background: rgba(18,21,43,0.45); z-index: 10; display: block; cursor: not-allowed; border-radius: 6px; }
+    #hover-cursor { position: absolute; pointer-events: none; border: 2px solid rgba(255,255,255,0.85); border-radius: 2px; display: none; z-index: 20; box-shadow: 0 0 6px rgba(0,0,0,0.5); }
 
-    #canvas-lock-overlay {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(27, 31, 59, 0.4); z-index: 10; display: block; cursor: not-allowed;
-    }
-
-    #hover-cursor {
-      position: absolute; pointer-events: none; border: 2px solid rgba(255,255,255,0.8);
-      border-radius: 2px; display: none; z-index: 20; box-shadow: 0 0 6px rgba(0,0,0,0.5);
-    }
-
-    #palette { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-    .color-btn { width: 34px; height: 34px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: transform 0.1s;}
-    .color-btn.selected { border-color: #43e8d8; transform: scale(1.15); box-shadow: 0 0 0 2px #252a4a, 0 0 0 4px #43e8d8;}
-    
+    #palette { display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; max-width: 576px; }
+    .color-btn { width: 30px; height: 30px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.25); transition: transform 0.1s; }
+    .color-btn:hover { transform: scale(1.1); }
+    .color-btn.selected { border-color: var(--accent); transform: scale(1.12); box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
     #eraser-btn {
-      width: 34px; height: 34px; border-radius: 50%; border: 3px solid transparent;
-      cursor: pointer; background: #2e3460; display: flex; align-items: center;
-      justify-content: center; font-size: 14px; color: white; transition: transform 0.1s;
+      width: 30px; height: 30px; border-radius: 8px; border: 2px solid transparent; cursor: pointer;
+      background: var(--surface-2); display: flex; align-items: center; justify-content: center; color: var(--text); transition: transform 0.1s;
     }
-    #eraser-btn.selected { border-color: #43e8d8; transform: scale(1.15); box-shadow: 0 0 0 2px #252a4a, 0 0 0 4px #43e8d8;}
+    #eraser-btn svg { width: 16px; height: 16px; }
+    #eraser-btn.selected { border-color: var(--accent); transform: scale(1.12); box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
 
-    /* Sağ Panel */
     #side-panel { width: 100%; max-width: 620px; display: flex; flex-direction: column; gap: 16px; }
-    @media (min-width: 900px) { #side-panel { width: 260px; max-width: 260px; } }
+    @media (min-width: 900px) { #side-panel { width: 270px; max-width: 270px; } }
+    .panel-card { background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent), var(--surface); border-radius: 16px; padding: 18px; border: 1px solid var(--border); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    .panel-title { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; }
 
-    .panel-card { background: #252a4a; border-radius: 14px; padding: 18px; border: 1px solid #2e3460; box-shadow: 0 4px 20px rgba(0,0,0,0.3);}
-    .panel-title { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #43e8d8; margin-bottom: 12px; }
-    
-    #room-name { font-size: 18px; font-weight: 700; color: #fff; }
-    #room-meta { font-size: 13px; color: #6b7280; margin-top: 4px;}
+    #room-name { font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 700; color: #fff; }
+    #room-meta { font-size: 13px; color: var(--muted); margin-top: 4px; }
 
     #cooldown-wrap { display: flex; flex-direction: column; gap: 8px; }
     #cooldown-top { display: flex; justify-content: space-between; align-items: center; }
-    #cooldown-status { font-size: 13px; font-weight: 700; color: #4ade80; }
-    #cooldown-timer-text { font-size: 13px; color: #6b7280; }
-    #cooldown-bar-bg { width: 100%; height: 6px; background: #1b1f3b; border-radius: 3px; overflow: hidden; }
-    #cooldown-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #43e8d8, #4ade80); }
+    #cooldown-status { font-size: 13px; font-weight: 700; color: var(--accent-2); }
+    #cooldown-timer-text { font-size: 13px; color: var(--muted); }
+    #cooldown-bar-bg { width: 100%; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+    #cooldown-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
 
     #players-list { display: flex; flex-direction: column; gap: 12px; }
     .player-row { display: flex; align-items: center; gap: 10px; }
-    .player-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: white; flex-shrink: 0; }
+    .player-avatar { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: white; flex-shrink: 0; }
     .player-info { flex: 1; overflow: hidden; }
-    .player-name { font-size: 14px; font-weight: 600; color: #e2e8f0; display:flex; justify-content:space-between; align-items: center; white-space: nowrap; text-overflow: ellipsis;}
-    .player-pixels { font-size: 12px; color: #6b7280; margin-top: 2px;}
-    .player-bar-bg { width: 100%; height: 4px; background: #1b1f3b; border-radius: 2px; margin-top: 4px; overflow: hidden;}
+    .player-name { font-size: 14px; font-weight: 600; color: var(--text); display: flex; justify-content: space-between; align-items: center; white-space: nowrap; text-overflow: ellipsis; }
+    .player-pixels { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .player-bar-bg { width: 100%; height: 4px; background: var(--bg); border-radius: 2px; margin-top: 4px; overflow: hidden; }
     .player-bar { height: 100%; transition: width 0.3s ease; }
+    .host-badge { color: var(--warn); display: inline-flex; vertical-align: middle; margin-left: 4px; }
+    .host-badge svg { width: 13px; height: 13px; }
 
-    #name-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(27, 31, 59, 0.85); backdrop-filter: blur(5px); z-index: 1000; justify-content: center; align-items: center; }
-    .modal-content { background: #252a4a; border: 1px solid #43e8d8; border-radius: 20px; padding: 32px; width: 340px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
-    .modal-content h2 { color: #fff; font-size: 22px; margin-bottom: 8px; letter-spacing: 2px; }
-    .modal-content p { color: #4ade80; font-size: 13px; margin-bottom: 24px; opacity: 0.8; }
-    .modal-content input { width: 100%; background: #1b1f3b; border: 1px solid #2e3460; border-radius: 10px; padding: 14px; color: white; font-size: 16px; text-align: center; margin-bottom: 20px; outline: none; text-transform: uppercase; font-family: 'Segoe UI', sans-serif; }
-    
+    #name-modal { display: none; position: fixed; inset: 0; background: rgba(18,21,43,0.85); backdrop-filter: blur(6px); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+    .modal-content { background: var(--surface); border: 1px solid var(--accent); border-radius: 20px; padding: 32px; width: 360px; max-width: 100%; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+    .modal-content h2 { font-family: 'Sora', sans-serif; color: #fff; font-size: 22px; margin-bottom: 8px; }
+    .modal-content p { color: var(--accent); font-size: 13px; margin-bottom: 22px; opacity: 0.85; }
+    .modal-content input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; color: white; font-size: 16px; text-align: center; margin-bottom: 18px; outline: none; font-family: inherit; }
+    .modal-content input:focus { border-color: var(--accent); }
+
     #chat-card { display: flex; flex-direction: column; gap: 10px; }
-
-    #chatBox {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      max-height: 200px;
-      overflow-y: auto;
-      overflow-x: hidden;
-      scrollbar-width: thin;
-      scrollbar-color: #2e3460 transparent;
-      padding-right: 4px;
-    }
-
-    .chat-msg {
-      font-size: 12px;
-      color: #e2e8f0;
-      line-height: 1.4;
-      word-break: break-word;
-    }
-    .chat-msg .chat-name {
-      font-weight: 700;
-      margin-right: 4px;
-    }
-    .chat-msg.mine .chat-name { color: #43e8d8; }
-    .chat-msg:not(.mine) .chat-name { color: #9b5de5; }
-
-    #chat-input-row {
-      display: flex;
-      gap: 6px;
-    }
-    #chatInput {
-      flex: 1;
-      background: #1b1f3b;
-      border: 1px solid #2e3460;
-      border-radius: 8px;
-      padding: 8px 10px;
-      color: white;
-      font-size: 13px;
-      letter-spacing: 0;
-      text-transform: none;
-      outline: none;
-      font-family: 'Segoe UI', sans-serif;
-    }
-    #chatInput:focus { border-color: #43e8d8; }
-    #chatSendBtn {
-      background: #43e8d8;
-      color: #1b1f3b;
-      border: none;
-      border-radius: 8px;
-      width: 34px;
-      font-size: 16px;
-      font-weight: 800;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: opacity 0.2s;
-    }
+    #chatBox { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: var(--border) transparent; padding-right: 4px; }
+    .chat-msg { font-size: 12.5px; color: var(--text); line-height: 1.4; word-break: break-word; }
+    .chat-msg .chat-name { font-weight: 700; margin-right: 4px; }
+    .chat-msg.mine .chat-name { color: var(--accent); }
+    .chat-msg:not(.mine) .chat-name { color: #9b8cff; }
+    #chat-input-row { display: flex; gap: 6px; }
+    #chatInput { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 9px 11px; color: white; font-size: 13px; outline: none; font-family: inherit; }
+    #chatInput:focus { border-color: var(--accent); }
+    #chatSendBtn { background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: #0c1024; border: none; border-radius: 10px; width: 36px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
     #chatSendBtn:hover { opacity: 0.85; }
-    #spectator-banner {
-      display: none;
-      width: 100%;
-      background: linear-gradient(135deg, #f77f00, #ffd166);
-      color: #1b1f3b;
-      border-radius: 10px;
-      padding: 10px 16px;
-      font-size: 13px;
-      font-weight: 700;
-      text-align: center;
-      letter-spacing: 1px;
-    }
+    #chatSendBtn svg { width: 16px; height: 16px; }
 
-    #spectator-count-badge {
-      font-size: 11px;
-      color: #6b7280;
-      text-align: center;
-      margin-top: 4px;
-      letter-spacing: 1px;
-    }
-
+    #spectator-banner { display: none; width: 100%; background: linear-gradient(120deg, var(--warn), #ffd166); color: #1c1304; border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 700; text-align: center; display: none; align-items: center; justify-content: center; gap: 8px; }
+    #spectator-banner svg { width: 16px; height: 16px; }
+    #spectator-count-badge { font-size: 11px; color: var(--muted); text-align: center; margin-top: 6px; letter-spacing: 0.5px; }
     #spectator-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .spectator-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .spectator-name { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .spectator-name svg { width: 14px; height: 14px; }
+    .promote-btn { background: var(--surface-2); color: var(--accent); border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; font-family: inherit; transition: background 0.2s; display: inline-flex; align-items: center; gap: 5px; }
+    .promote-btn svg { width: 11px; height: 11px; }
+    .promote-btn:hover { background: #2f366a; }
 
-    .spectator-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .spectator-name {
-      font-size: 13px;
-      color: #6b7280;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .promote-btn {
-      background: #2e3460;
-      color: #43e8d8;
-      border: none;
-      border-radius: 6px;
-      padding: 4px 10px;
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
-      letter-spacing: 1px;
-      transition: background 0.2s;
-      white-space: nowrap;
-    }
-    .promote-btn:hover { background: #3a4270; }
-
-    #promotion-toggle-row {
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid #2e3460;
-    }
-
-    #promotion-toggle-label {
-      font-size: 12px;
-      color: #6b7280;
-      letter-spacing: 1px;
-    }
-
-    .toggle-switch {
-      position: relative;
-      width: 36px;
-      height: 20px;
-      flex-shrink: 0;
-    }
+    #promotion-toggle-row { display: none; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+    #promotion-toggle-label { font-size: 12px; color: var(--muted); }
+    .toggle-switch { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
     .toggle-switch input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider {
-      position: absolute;
-      inset: 0;
-      background: #2e3460;
-      border-radius: 20px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .toggle-slider::before {
-      content: '';
-      position: absolute;
-      width: 14px; height: 14px;
-      left: 3px; top: 3px;
-      background: white;
-      border-radius: 50%;
-      transition: transform 0.2s;
-    }
-    .toggle-switch input:checked + .toggle-slider { background: #43e8d8; }
+    .toggle-slider { position: absolute; inset: 0; background: var(--surface-2); border-radius: 22px; cursor: pointer; transition: background 0.2s; }
+    .toggle-slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: transform 0.2s; }
+    .toggle-switch input:checked + .toggle-slider { background: var(--accent); }
     .toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); }
-    
-    #slot-toast {
-      display: none;
-      position: fixed;
-      bottom: 32px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: linear-gradient(135deg, #43e8d8, #4ade80);
-      color: #1b1f3b;
-      border-radius: 14px;
-      padding: 14px 24px;
-      font-size: 14px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      z-index: 500;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      text-align: center;
-    }
+
+    #slot-toast { display: none; position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: #0c1024; border-radius: 14px; padding: 14px 22px; font-size: 14px; font-weight: 700; z-index: 500; box-shadow: 0 12px 36px rgba(0,0,0,0.4); flex-direction: column; align-items: center; gap: 10px; text-align: center; max-width: 90vw; }
     #slot-toast.visible { display: flex; }
     .toast-actions { display: flex; gap: 8px; }
-    .toast-btn {
-      border: none;
-      border-radius: 8px;
-      padding: 8px 16px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
+    .toast-btn { border: none; border-radius: 9px; padding: 8px 16px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: opacity 0.2s; }
     .toast-btn:hover { opacity: 0.85; }
-    .toast-accept { background: #1b1f3b; color: #43e8d8; }
-    .toast-decline { background: rgba(27,31,59,0.4); color: #1b1f3b; }
-  
-    #mute-btn {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: #252a4a;
-      border: 1px solid #2e3460;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      cursor: pointer;
-      z-index: 400;
-      transition: border-color 0.2s;
-    }
-    #mute-btn:hover { border-color: #43e8d8; }
+    .toast-accept { background: #0c1024; color: var(--accent); }
+    .toast-decline { background: rgba(12,16,36,0.35); color: #0c1024; }
+
+    .room-gallery-link { display: inline-flex; align-items: center; gap: 7px; justify-content: center; width: 100%; margin-top: 10px; font-size: 12px; color: var(--accent); opacity: 0.8; letter-spacing: 0.5px; font-weight: 600; text-decoration: none; }
+    .room-gallery-link:hover { opacity: 1; }
+    .room-gallery-link svg { width: 14px; height: 14px; }
+    #mute-btn { position: fixed; bottom: 20px; right: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 50%; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; color: var(--accent); cursor: pointer; z-index: 400; transition: border-color 0.2s; }
+    #mute-btn:hover { border-color: var(--accent); }
+    #mute-btn svg { width: 20px; height: 20px; }
   </style>
 </head>
 <body>
 
   <div class="header">
     <h1>GredArt</h1>
-    <div id="subtitle">BERABER ÇİZ</div>
+    <div id="subtitle" data-i18n="tagline">BERABER ÇİZ</div>
   </div>
 
   <div id="main">
     <div id="board-section">
       <div id="game-status-bar">
-        <div id="game-message">Oyuncu bekleniyor...</div>
-        
+        <div id="game-message" data-i18n="waiting_players">Oyuncu bekleniyor…</div>
+
         <div id="host-top-controls" style="display:none; gap:8px;">
-          <button class="action-btn" style="padding:6px 12px; width:auto;" onclick="startGame('timed')">⏱️ SÜRELİ</button>
-          <button class="action-btn secondary" style="padding:6px 12px; width:auto;" onclick="startGame('free')">🎨 SERBEST</button>
+          <button class="action-btn" style="padding:8px 12px; width:auto;" onclick="startGame('timed')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>
+            <span data-i18n="timed">Süreli</span>
+          </button>
+          <button class="action-btn secondary" style="padding:8px 12px; width:auto;" onclick="startGame('free')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20 2 2 0 0 0 2-2v-1a2 2 0 0 1 2-2h1a3 3 0 0 0 3-3 9 9 0 0 0-9-9Z"/><circle cx="7.5" cy="10.5" r="1.2" fill="currentColor"/><circle cx="12" cy="7.5" r="1.2" fill="currentColor"/><circle cx="16.5" cy="10.5" r="1.2" fill="currentColor"/></svg>
+            <span data-i18n="free">Serbest</span>
+          </button>
         </div>
 
         <div id="host-finish-controls" style="display:none; gap:8px;">
-          <button id="finish-btn" class="action-btn secondary" style="padding:6px 12px; width:auto;" onclick="finishRoom()">✅ BİTİR</button>
+          <button id="finish-btn" class="action-btn secondary" style="padding:8px 12px; width:auto;" onclick="finishRoom()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            <span data-i18n="finish">Bitir</span>
+          </button>
         </div>
 
         <div id="end-top-controls" style="display:none; gap:8px;">
-          <button class="action-btn" style="padding:6px 12px; width:auto;" onclick="downloadCanvas()">🖼️ İNDİR</button>
-          <button id="replay-btn" class="action-btn secondary" style="padding:6px 12px; width:auto; display:none;" onclick="resetRoom()">🔄 YENİ TUR</button>
+          <button class="action-btn ghost" style="padding:8px 12px; width:auto;" onclick="downloadCanvas()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+            <span data-i18n="download">İndir</span>
+          </button>
+          <button id="replay-btn" class="action-btn secondary" style="padding:8px 12px; width:auto; display:none;" onclick="resetRoom()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8m0-5v5h5"/></svg>
+            <span data-i18n="new_round">Yeni Tur</span>
+          </button>
         </div>
 
         <div style="display:flex; align-items:center; gap:12px;">
-            <div id="game-timer" style="display:none;"></div>
-            <button id="fullscreen-btn" style="background:none; border:none; color:#43e8d8; font-size:20px; cursor:pointer; transition:transform 0.1s;" title="Tam Ekran">⛶</button>
+          <div id="game-timer" style="display:none;"></div>
+          <button id="fullscreen-btn" class="icon-btn" title="Fullscreen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/></svg>
+          </button>
         </div>
       </div>
 
-      <div id="spectator-banner">👁️ İZLEYİCİ MODUNDASIN — Oda Dolu</div>
+      <div id="spectator-banner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span data-i18n="spectator_mode">İZLEYİCİ MODUNDASIN — Oda dolu</span>
+      </div>
       <div id="canvas-wrapper">
         <canvas id="canvas"></canvas>
         <div id="hover-cursor"></div>
         <div id="canvas-lock-overlay"></div>
       </div>
-      
+
       <div id="palette"></div>
     </div>
 
     <div id="side-panel">
       <div class="panel-card">
-        <div class="panel-title">FIRÇA BEKLEMESİ</div>
+        <div class="panel-title" data-i18n="brush_cooldown">FIRÇA BEKLEMESİ</div>
         <div id="cooldown-wrap">
           <div id="cooldown-top">
-            <span id="cooldown-status">KİLİTLİ</span>
+            <span id="cooldown-status" data-i18n="locked">KİLİTLİ</span>
             <span id="cooldown-timer-text"></span>
           </div>
           <div id="cooldown-bar-bg"><div id="cooldown-bar"></div></div>
@@ -438,17 +261,17 @@
       </div>
 
       <div class="panel-card">
-        <div class="panel-title">KATILIMCILAR</div>
+        <div class="panel-title" data-i18n="players">KATILIMCILAR</div>
         <div id="players-list"></div>
 
         <div id="spectators-section" style="display:none; margin-top:12px;">
-          <div class="panel-title" style="margin-bottom:8px;">İZLEYİCİLER</div>
-          <button id="show-spectators-btn" class="action-btn secondary" style="padding:8px 12px; width:auto; display:none;">İzleyicileri Göster</button>
+          <div class="panel-title" style="margin-bottom:8px;" data-i18n="spectators">İZLEYİCİLER</div>
+          <button id="show-spectators-btn" class="action-btn ghost" style="padding:8px 12px; width:auto; display:none;" data-i18n="show_spectators">İzleyicileri Göster</button>
           <div id="spectator-list" style="display:none;"></div>
         </div>
 
         <div id="promotion-toggle-row">
-          <span id="promotion-toggle-label">İzleyici Katılımına İzin Ver</span>
+          <span id="promotion-toggle-label" data-i18n="allow_join">İzleyici katılımına izin ver</span>
           <label class="toggle-switch">
             <input type="checkbox" id="promotion-toggle" checked>
             <span class="toggle-slider"></span>
@@ -457,18 +280,28 @@
       </div>
 
       <div class="panel-card">
-        <div class="panel-title">ODA BİLGİSİ</div>
-        <div id="room-name">Yükleniyor...</div>
+        <div class="panel-title" data-i18n="room_info">ODA BİLGİSİ</div>
+        <div id="room-name" data-i18n="loading">Yükleniyor…</div>
         <div id="room-meta"></div>
         <div id="spectator-count-badge"></div>
-        <button class="action-btn" style="background:#2e3460; color:#43e8d8; margin-top:12px;" onclick="copyLink(this)">🔗 LİNKİ KOPYALA</button>
+        <button class="action-btn ghost" style="margin-top:12px;" onclick="copyLink(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+          <span class="copy-label" data-i18n="copy_link">Linki Kopyala</span>
+        </button>
+        <a href="/gallery" class="room-gallery-link" id="room-gallery-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          <span data-i18n="gallery_link">GALERİYİ GÖRÜNTÜLE</span>
+        </a>
       </div>
+
       <div class="panel-card" id="chat-card">
-        <div class="panel-title">SOHBET</div>
+        <div class="panel-title" data-i18n="chat">SOHBET</div>
         <div id="chatBox"></div>
         <div id="chat-input-row">
-          <input id="chatInput" type="text" placeholder="Mesaj yaz..." maxlength="120" autocomplete="off" />
-          <button id="chatSendBtn">↑</button>
+          <input id="chatInput" type="text" data-i18n-ph="chat_ph" maxlength="120" autocomplete="off" />
+          <button id="chatSendBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5m0 0-6 6m6-6 6 6"/></svg>
+          </button>
         </div>
       </div>
     </div>
@@ -476,166 +309,144 @@
 
   <div id="name-modal">
     <div class="modal-content">
-      <h2>ODAYA KATIL</h2>
-      <p>Oyuna girmek için bir ad belirle</p>
-      <input type="text" id="modal-name-input" placeholder="OYUN İÇİ ADIN" maxlength="12">
-      <button id="modal-join-btn" class="action-btn" style="padding:14px; font-size:15px;">OYUNA GİR</button>
+      <h2 data-i18n="join_title">ODAYA KATIL</h2>
+      <p data-i18n="join_sub">Oyuna girmek için bir ad belirle</p>
+      <input type="text" id="modal-name-input" data-i18n-ph="name_ph2" maxlength="12">
+      <button id="modal-join-btn" class="action-btn" style="padding:14px; font-size:15px;" data-i18n="enter_game">Oyuna Gir</button>
     </div>
   </div>
 
   <div id="slot-toast">
-    🎉 Bir yer açıldı! Oyuna katılmak ister misin?
+    <span data-i18n="slot_open">Bir yer açıldı! Oyuna katılmak ister misin?</span>
     <div class="toast-actions">
-      <button class="toast-btn toast-accept" id="toast-accept-btn">KATIL</button>
-      <button class="toast-btn toast-decline" id="toast-decline-btn">İzlemeye Devam Et</button>
+      <button class="toast-btn toast-accept" id="toast-accept-btn" data-i18n="join">Katıl</button>
+      <button class="toast-btn toast-decline" id="toast-decline-btn" data-i18n="keep_watching">İzlemeye devam et</button>
     </div>
   </div>
-  <button id="mute-btn" title="Sesi Aç/Kapat">🔊</button>
+  <button id="mute-btn" title="Mute">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"/></svg>
+  </button>
 
+  <script src="/i18n.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const pathParts = window.location.pathname.split('/');
     const roomKod = pathParts[pathParts.length - 1].toUpperCase();
 
-    const BOARD_SIZE = 32;
-    const CELL_SIZE = 18; 
-    const COOLDOWN = 1000;
-    const EMPTY_COLOR = '#ffffff';
-    const COLORS = ['#ffffff', '#1a1a2e', '#e63946', '#4361ee', '#2dc653', '#ffd166', '#f77f00', '#9b5de5'];
+    // Dinamik tuval boyutu (oda kurarken seçilen 16/32/64'e göre board_state'ten gelir)
+    const CANVAS_PX = 576;          // İç çözünürlük (16/32/64'e tam bölünür)
+    let BOARD_SIZE = 32;
+    let CELL_SIZE = CANVAS_PX / BOARD_SIZE;
 
-    let selectedColor = COLORS[2];
+    const COOLDOWN = 400;
+    const EMPTY_COLOR = '#ffffff';
+    // 24 renkli zengin palet
+    const COLORS = [
+      '#ffffff','#c5cde0','#8b93b8','#4a5078','#222a4a','#0c1024',
+      '#ff6b6b','#e63946','#b5121b','#ff9f1c','#f77f00','#ffd166',
+      '#06d6a0','#2dc653','#0b7a3e','#43e8d8','#00b4d8','#4361ee',
+      '#3a0ca3','#9b5de5','#c14fd6','#f15bb5','#ff8fab','#7f5539'
+    ];
+
+    let selectedColor = COLORS[7];
     let eraserActive = false;
     let lastPlaced = 0;
     let cooldownInterval = null;
     let players = {};
     let myId = null;
-    let hostId = null; 
+    let hostId = null;
     let gameState = 'waiting';
     let currentMode = null;
     let isSpectator = false;
     let spectators = {};
     let allowPromotion = true;
+
+    // Küçük SVG ikon yardımcıları (JS ile üretilen içerikler için)
+    const ICON_CROWN = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17h18l-1.2-9-4.3 3.2L12 5l-3.5 6.2L4.2 8 3 17Z"/></svg>';
+    const ICON_EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+    const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5m0 0-6 6m6-6 6 6"/></svg>';
+
     // =====================
     // SOUND ENGINE
     // =====================
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
-
-    // Lazy-init AudioContext on first user interaction (browser requirement)
     function getAudioCtx() {
       if (!audioCtx) audioCtx = new AudioContext();
       if (audioCtx.state === 'suspended') audioCtx.resume();
       return audioCtx;
     }
-
     function playPixelClick() {
       if (isMuted) return;
       const ctx = getAudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
+      const osc = ctx.createOscillator(); const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
       osc.type = 'sine';
       osc.frequency.setValueAtTime(880, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.06);
-
       gain.gain.setValueAtTime(0.08, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.08);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.08);
     }
-
     function playCountdownWarning() {
       if (isMuted) return;
       const ctx = getAudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(440, ctx.currentTime);
-
+      const osc = ctx.createOscillator(); const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'square'; osc.frequency.setValueAtTime(440, ctx.currentTime);
       gain.gain.setValueAtTime(0.06, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.15);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.15);
     }
-
     function playGameEnd() {
       if (isMuted) return;
       const ctx = getAudioCtx();
-      // Three ascending notes
       [523, 659, 784].forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime);
-
+        const osc = ctx.createOscillator(); const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine'; osc.frequency.setValueAtTime(freq, ctx.currentTime);
         const start = ctx.currentTime + i * 0.15;
         gain.gain.setValueAtTime(0, start);
         gain.gain.linearRampToValueAtTime(0.12, start + 0.05);
         gain.gain.exponentialRampToValueAtTime(0.001, start + 0.4);
-
-        osc.start(start);
-        osc.stop(start + 0.4);
+        osc.start(start); osc.stop(start + 0.4);
       });
     }
-
     function playPlayerJoined() {
       if (isMuted) return;
       const ctx = getAudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
+      const osc = ctx.createOscillator(); const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
       osc.type = 'sine';
       osc.frequency.setValueAtTime(600, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.1);
-
       gain.gain.setValueAtTime(0.07, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.15);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.15);
     }
     let isMuted = false;
-    document.getElementById('mute-btn').addEventListener('click', () => {
+    const muteBtn = document.getElementById('mute-btn');
+    const ICON_VOL_ON = muteBtn.innerHTML;
+    const ICON_VOL_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="m23 9-6 6m0-6 6 6"/></svg>';
+    muteBtn.addEventListener('click', () => {
       isMuted = !isMuted;
-      document.getElementById('mute-btn').textContent = isMuted ? '🔇' : '🔊';
+      muteBtn.innerHTML = isMuted ? ICON_VOL_OFF : ICON_VOL_ON;
     });
     // =====================
 
     // Pinch-to-zoom state
-    let canvasScale = 1;
-    let canvasTranslateX = 0;
-    let canvasTranslateY = 0;
-    let pinchStartDist = 0;
-    let pinchStartScale = 1;
-    let pinchStartMidX = 0;
-    let pinchStartMidY = 0;
-    let pinchStartTX = 0;
-    let pinchStartTY = 0;
-    const MIN_SCALE = 1;
-    const MAX_SCALE = 8;
+    let canvasScale = 1, canvasTranslateX = 0, canvasTranslateY = 0;
+    let pinchStartDist = 0, pinchStartScale = 1, pinchStartMidX = 0, pinchStartMidY = 0, pinchStartTX = 0, pinchStartTY = 0;
+    const MIN_SCALE = 1, MAX_SCALE = 8;
 
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const hoverCursor = document.getElementById('hover-cursor');
-    const displaySize = BOARD_SIZE * CELL_SIZE; 
-    canvas.width = displaySize;
-    canvas.height = displaySize;
+    canvas.width = CANVAS_PX;
+    canvas.height = CANVAS_PX;
 
     const socket = io();
 
-    // İsim Girişi
     const nameModal = document.getElementById('name-modal');
     const modalNameInput = document.getElementById('modal-name-input');
     const modalJoinBtn = document.getElementById('modal-join-btn');
@@ -646,10 +457,8 @@
       const sessionToken = localStorage.getItem('gredartSession_' + roomKod);
 
       if (!playerName) {
-        // Always ask for name first, then join
         nameModal.style.display = 'flex';
         modalNameInput.focus();
-
         const doJoin = () => {
           const val = modalNameInput.value.trim().toUpperCase();
           if (!val) return;
@@ -657,23 +466,16 @@
           nameModal.style.display = 'none';
           socket.emit('join_room', { kod: roomKod, name: val, token: sessionToken });
         };
-
         modalJoinBtn.addEventListener('click', doJoin);
-        modalNameInput.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') doJoin();
-        });
+        modalNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') doJoin(); });
       } else {
         socket.emit('join_room', { kod: roomKod, name: playerName, token: sessionToken });
       }
     });
 
-    socket.on('session_token', (token) => {
-      localStorage.setItem('gredartSession_' + roomKod, token);
-    });
-
+    socket.on('session_token', (token) => { localStorage.setItem('gredartSession_' + roomKod, token); });
     socket.on('room_error', (msg) => { alert(msg); window.location.replace('/'); });
 
-    // UI Yönetimi Değişkenleri
     const gameMessageEl = document.getElementById('game-message');
     const gameTimerEl = document.getElementById('game-timer');
     const hostTopControls = document.getElementById('host-top-controls');
@@ -688,70 +490,56 @@
     const showSpectatorsBtn = document.getElementById('show-spectators-btn');
     const spectatorList = document.getElementById('spectator-list');
 
-    // Tam Ekran İşlevi
     fullscreenBtn.addEventListener('click', () => {
-        if (!document.fullscreenElement) {
-            boardSection.requestFullscreen().catch(err => {
-                console.log(`Tam ekran hatası: ${err.message}`);
-            });
-        } else {
-            document.exitFullscreen();
-        }
+      if (!document.fullscreenElement) {
+        boardSection.requestFullscreen().catch(err => console.log(`Fullscreen: ${err.message}`));
+      } else {
+        document.exitFullscreen();
+      }
     });
 
     function updateUIBasedOnState() {
-      // Panelleri gizle
       hostTopControls.style.display = 'none';
       endTopControls.style.display = 'none';
-      
-      // Yalnızca oyun oynanıyorsa ve mod süreliyse sayacı göster (Eski bug'ın çözümü)
       gameTimerEl.style.display = (gameState === 'playing' && currentMode === 'timed') ? 'block' : 'none';
-      
       canvasLock.style.display = (gameState === 'playing') ? 'none' : 'block';
-      if (isSpectator) {
-        canvasLock.style.display = 'block';
-        return;
-      }
+      if (isSpectator) { canvasLock.style.display = 'block'; return; }
       if (gameState === 'waiting') {
-        cdStatusEl.textContent = 'KİLİTLİ'; cdStatusEl.style.color = '#e63946';
+        cdStatusEl.textContent = t('locked'); cdStatusEl.style.color = 'var(--danger)';
         hostFinishControls.style.display = 'none';
-        
         if (myId === hostId) {
           hostTopControls.style.display = 'flex';
-          gameMessageEl.innerHTML = 'MOD SEÇ:';
+          gameMessageEl.textContent = t('choose_mode');
         } else {
           hostTopControls.style.display = 'none';
-          gameMessageEl.textContent = 'Oda Sahibinin Başlatması Bekleniyor...';
+          gameMessageEl.textContent = t('waiting_host');
         }
-      } 
-      else if (gameState === 'playing') {
+      } else if (gameState === 'playing') {
         hostTopControls.style.display = 'none';
         hostFinishControls.style.display = (myId === hostId && currentMode === 'free') ? 'flex' : 'none';
-      }
-      else if (gameState === 'finished') {
+      } else if (gameState === 'finished') {
         hostFinishControls.style.display = 'none';
         endTopControls.style.display = 'flex';
-        // Sadece host yeni tur başlatabilir
         replayBtn.style.display = (myId === hostId) ? 'block' : 'none';
       }
     }
 
-    // Socket Eventleri
+    function setWordMessage(mode, word) {
+      gameMessageEl.innerHTML = (mode === 'free')
+        ? `<span id="game-word-highlight">${t('free_mode')}</span>`
+        : `${t('word')}: <span id="game-word-highlight"></span>`;
+      if (mode !== 'free') gameMessageEl.querySelector('#game-word-highlight').textContent = word;
+    }
+
     socket.on('room_info', (data) => {
       hostId = data.hostId;
       gameState = data.status;
       currentMode = data.mode;
-      document.getElementById('room-name').textContent = 'Oda: ' + data.kod;
-      document.getElementById('room-meta').textContent = '32×32 Pikseller';
-      
-      if(data.status === 'playing') {
-          gameMessageEl.innerHTML = (data.mode === 'free') 
-            ? `<span id="game-word-highlight">🎨 SERBEST MOD</span>`
-            : `Kelime: <span id="game-word-highlight">${data.word}</span>`;
-          if(data.mode === 'timed') { 
-            updateTimer(data.timeLeft); 
-          }
-          cdStatusEl.textContent = 'HAZIR'; cdStatusEl.style.color = '#4ade80';
+      document.getElementById('room-name').textContent = t('room_label') + ': ' + data.kod;
+      if (data.status === 'playing') {
+        setWordMessage(data.mode, data.word);
+        if (data.mode === 'timed') updateTimer(data.timeLeft);
+        cdStatusEl.textContent = t('ready'); cdStatusEl.style.color = 'var(--accent-2)';
       }
       updateUIBasedOnState();
     });
@@ -759,42 +547,31 @@
     socket.on('game_started', (data) => {
       gameState = 'playing';
       currentMode = data.mode;
-      gameMessageEl.innerHTML = (data.mode === 'free') 
-        ? `<span id="game-word-highlight">🎨 SERBEST MOD</span>`
-        : `Kelime: <span id="game-word-highlight">${data.word}</span>`;
-        
-      if(data.mode === 'timed') { 
-        updateTimer(data.timeLeft);
-      }
-      cdStatusEl.textContent = 'HAZIR'; cdStatusEl.style.color = '#4ade80';
+      setWordMessage(data.mode, data.word);
+      if (data.mode === 'timed') updateTimer(data.timeLeft);
+      cdStatusEl.textContent = t('ready'); cdStatusEl.style.color = 'var(--accent-2)';
       updateUIBasedOnState();
     });
 
-    socket.on('time_update', (timeLeft) => { updateTimer(timeLeft); if (timeLeft <= 10 && timeLeft > 0) playCountdownWarning();});
+    socket.on('time_update', (timeLeft) => { updateTimer(timeLeft); if (timeLeft <= 10 && timeLeft > 0) playCountdownWarning(); });
 
     socket.on('game_ended', () => {
       playGameEnd();
       gameState = 'finished';
-      gameMessageEl.innerHTML = `<span style="color:#e63946;">SÜRE BİTTİ!</span> ESERİNİZ KAYDEDİLDİ.`;
+      gameMessageEl.innerHTML = `<span style="color:var(--danger);font-weight:700;">${t('time_up')}</span> ${t('saved')}`;
       gameTimerEl.style.display = 'none';
-      cdStatusEl.textContent = 'KİLİTLİ'; cdStatusEl.style.color = '#e63946';
+      cdStatusEl.textContent = t('locked'); cdStatusEl.style.color = 'var(--danger)';
       updateUIBasedOnState();
     });
 
-    socket.on('room_reset', () => {
-      gameState = 'waiting';
-      currentMode = null;
-      updateUIBasedOnState();
-    });
+    socket.on('room_reset', () => { gameState = 'waiting'; currentMode = null; updateUIBasedOnState(); });
 
     socket.on('joined_as_spectator', () => {
       isSpectator = true;
-      document.getElementById('spectator-banner').style.display = 'block';
-      // Lock canvas permanently for spectators
+      document.getElementById('spectator-banner').style.display = 'flex';
       document.getElementById('canvas-lock-overlay').style.display = 'block';
       document.getElementById('palette').style.opacity = '0.3';
       document.getElementById('palette').style.pointerEvents = 'none';
-      // Hide host controls even if somehow triggered
       document.getElementById('host-top-controls').style.display = 'none';
     });
     socket.on('spectator_promotion_toggled', (allowed) => {
@@ -806,7 +583,7 @@
     showSpectatorsBtn.addEventListener('click', () => {
       if (spectatorList.style.display === 'block') {
         spectatorList.style.display = 'none';
-        showSpectatorsBtn.textContent = 'İzleyicileri Göster';
+        showSpectatorsBtn.textContent = t('show_spectators');
         return;
       }
       socket.emit('request_spectator_list');
@@ -816,14 +593,14 @@
       spectators = data;
       renderSpectators();
       spectatorList.style.display = 'block';
-      showSpectatorsBtn.textContent = 'İzleyicileri Gizle';
+      showSpectatorsBtn.textContent = t('hide_spectators');
     });
 
     socket.on('promotion_denied', () => {
       slotToast.classList.remove('visible');
       const badge = document.getElementById('spectator-count-badge');
       const prev = badge.textContent;
-      badge.textContent = 'Host katılıma izin vermiyor.';
+      badge.textContent = t('promotion_denied');
       setTimeout(() => badge.textContent = prev, 3000);
     });
 
@@ -833,16 +610,14 @@
     socket.on('slot_available', () => {
       if (!isSpectator) return;
       slotToast.classList.add('visible');
-      slotToastTimer = setTimeout(() => {
-        slotToast.classList.remove('visible');
-      }, 15000);
+      slotToastTimer = setTimeout(() => { slotToast.classList.remove('visible'); }, 15000);
     });
 
     socket.on('slot_gone', () => {
       slotToast.classList.remove('visible');
       const badge = document.getElementById('spectator-count-badge');
       const prev = badge.textContent;
-      badge.textContent = 'Yer kapıldı, sıra sende değil.';
+      badge.textContent = t('slot_gone');
       setTimeout(() => badge.textContent = prev, 3000);
     });
 
@@ -856,42 +631,35 @@
       updateUIBasedOnState();
     });
 
-    document.getElementById('toast-accept-btn').addEventListener('click', () => {
-      socket.emit('claim_slot');
-    });
-
+    document.getElementById('toast-accept-btn').addEventListener('click', () => { socket.emit('claim_slot'); });
     document.getElementById('toast-decline-btn').addEventListener('click', () => {
       slotToast.classList.remove('visible');
       if (slotToastTimer) clearTimeout(slotToastTimer);
     });
-
-    document.getElementById('promotion-toggle').addEventListener('change', () => {
-      socket.emit('toggle_spectator_promotion');
-    });
+    document.getElementById('promotion-toggle').addEventListener('change', () => { socket.emit('toggle_spectator_promotion'); });
 
     socket.on('spectator_count', (count) => {
       const badge = document.getElementById('spectator-count-badge');
       const isHost = myId === hostId;
-      badge.textContent = count > 0 ? `👁️ ${count} izleyici` : '';
+      badge.textContent = count > 0 ? `${count} ${t('spectator_count')}` : '';
       showSpectatorsBtn.style.display = isHost && count > 0 ? 'block' : 'none';
       spectatorSection.style.display = isHost && count > 0 ? 'block' : 'none';
       if (!isHost || count === 0) {
         spectatorList.style.display = 'none';
-        showSpectatorsBtn.textContent = 'İzleyicileri Göster';
+        showSpectatorsBtn.textContent = t('show_spectators');
       }
     });
 
     socket.on('kicked', (msg) => { alert(msg); window.location.replace('/'); });
 
-    // Yardımcı Buton Fonksiyonları
     function startGame(mode) { socket.emit('start_game', { mode }); }
     function resetRoom() { socket.emit('reset_room'); }
     function finishRoom() { socket.emit('finish_game'); }
     function downloadCanvas() {
-        const link = document.createElement('a');
-        link.download = `gredart-${roomKod}.png`;
-        link.href = canvas.toDataURL("image/png");
-        link.click();
+      const link = document.createElement('a');
+      link.download = `gredart-${roomKod}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
     }
     function updateTimer(seconds) {
       const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -899,11 +667,21 @@
       gameTimerEl.textContent = `${m}:${s}`;
     }
 
-    // Çizim ve Tablo
+    // Tuvali gelen tablonun boyutuna göre yapılandır
+    function configureBoard(size) {
+      if (size === BOARD_SIZE) return;
+      BOARD_SIZE = size;
+      CELL_SIZE = CANVAS_PX / size;
+    }
+
     socket.on('board_state', (board) => {
+      configureBoard(board.length);
+      document.getElementById('room-meta').textContent = `${BOARD_SIZE}×${BOARD_SIZE}`;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       for (let y = 0; y < BOARD_SIZE; y++) for (let x = 0; x < BOARD_SIZE; x++) drawCell(x, y, board[y][x]);
     });
     socket.on('pixel_placed', ({ x, y, color }) => drawCell(x, y, color));
+
     let prevPlayerCount = 0;
     socket.on('players_update', (data) => {
       const newCount = Object.keys(data).length;
@@ -914,20 +692,16 @@
     });
 
     function handleDraw(clientX, clientY) {
-      if (isSpectator) return; 
+      if (isSpectator) return;
       if (gameState !== 'playing') return;
       const now = Date.now();
       if (now - lastPlaced < COOLDOWN) return;
-
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
-      
       const x = Math.floor(((clientX - rect.left) * scaleX) / CELL_SIZE);
       const y = Math.floor(((clientY - rect.top) * scaleY) / CELL_SIZE);
-
       if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE) return;
-
       const color = eraserActive ? EMPTY_COLOR : selectedColor;
       lastPlaced = now;
       socket.emit('place_pixel', { x, y, color });
@@ -940,11 +714,7 @@
       canvasWrapper.style.transformOrigin = '0 0';
       canvasWrapper.style.transform = `translate(${canvasTranslateX}px, ${canvasTranslateY}px) scale(${canvasScale})`;
     }
-
-    function getTouchDist(t1, t2) {
-      return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-    }
-
+    function getTouchDist(t1, t2) { return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY); }
     const canvasWrapper = document.getElementById('canvas-wrapper');
 
     canvasWrapper.addEventListener('touchstart', (e) => {
@@ -968,11 +738,8 @@
         const dist = getTouchDist(e.touches[0], e.touches[1]);
         let newScale = pinchStartScale * (dist / pinchStartDist);
         newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, newScale));
-
         const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
         const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-
-        // Zoom toward the pinch midpoint
         const scaleDiff = newScale - pinchStartScale;
         const rect = canvasWrapper.getBoundingClientRect();
         canvasTranslateX = pinchStartTX - (pinchStartMidX - rect.left) * scaleDiff;
@@ -983,20 +750,18 @@
     }, { passive: false });
 
     canvas.addEventListener('mousemove', (e) => {
-      if(gameState !== 'playing') return;
+      if (gameState !== 'playing') return;
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
       const x = Math.floor(((e.clientX - rect.left) * scaleX) / CELL_SIZE);
       const y = Math.floor(((e.clientY - rect.top) * scaleY) / CELL_SIZE);
-      
       hoverCursor.style.display = 'block';
       const displayCellWidth = rect.width / BOARD_SIZE;
       hoverCursor.style.width = displayCellWidth + 'px';
       hoverCursor.style.height = displayCellWidth + 'px';
       hoverCursor.style.left = (x * displayCellWidth) + 'px';
       hoverCursor.style.top = (y * displayCellWidth) + 'px';
-      
       hoverCursor.style.borderColor = eraserActive ? 'rgba(255,255,255,0.6)' : (selectedColor === '#ffffff' ? 'rgba(200,200,200,0.8)' : selectedColor);
       hoverCursor.style.background = eraserActive ? 'rgba(255,255,255,0.15)' : 'transparent';
     });
@@ -1006,7 +771,7 @@
       ctx.fillStyle = color;
       ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
       if (color === EMPTY_COLOR) {
-        ctx.strokeStyle = 'rgba(100,110,160,0.25)'; ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(100,110,160,0.22)'; ctx.lineWidth = 1;
         ctx.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
       }
     }
@@ -1023,62 +788,51 @@
         bar.style.width = Math.min((elapsed / COOLDOWN) * 100, 100) + '%';
         if (elapsed >= COOLDOWN) {
           clearInterval(cooldownInterval); bar.style.width = '0%';
-          statusEl.textContent = 'HAZIR'; statusEl.style.color = '#4ade80'; timerEl.textContent = '';
+          statusEl.textContent = t('ready'); statusEl.style.color = 'var(--accent-2)'; timerEl.textContent = '';
         } else {
-          statusEl.textContent = 'BEKLE'; statusEl.style.color = '#f093fb';
+          statusEl.textContent = t('wait'); statusEl.style.color = '#f093fb';
           timerEl.textContent = ((COOLDOWN - elapsed) / 1000).toFixed(1) + 's';
         }
       }, 50);
     }
+
     function escapeHTML(str) {
-    return str.replace(/[&<>'"]/g, tag => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-      }[tag]));
+      return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag]));
     }
     function renderPlayers() {
       const list = document.getElementById('players-list'); list.innerHTML = '';
       const sorted = Object.values(players).sort((a, b) => b.pixels - a.pixels);
       const maxPixels = Math.max(sorted[0]?.pixels || 1, 1);
       sorted.forEach(p => {
-      const isMe = p.id === myId; const isHost = p.id === hostId;
-      const safeName = escapeHTML(p.name);
-      const kickBtn = (myId === hostId && !isMe) ? `<button onclick="kickPlayer('${p.id}')" style="background:none;border:none;color:#e63946;cursor:pointer;font-weight:bold;font-size:14px;">✕</button>` : '';
-      const row = document.createElement('div'); row.className = 'player-row';
-      row.innerHTML = `<div class="player-avatar" style="background:${p.avatarColor};position:relative;">${safeName[0]}${isHost ? '<span style="position:absolute;top:-8px;left:-5px;font-size:14px;">👑</span>' : ''}</div>
-        <div class="player-info"><div class="player-name"><span>${safeName}${isMe ? '<small style="color:#43e8d8;font-size:10px;"> (sen)</small>' : ''}</span>${kickBtn}</div>
-        <div class="player-pixels">${p.pixels} piksel</div><div class="player-bar-bg"><div class="player-bar" style="width:${(p.pixels/maxPixels)*100}%;background:${p.avatarColor}"></div></div></div>`;
-      list.appendChild(row);
+        const isMe = p.id === myId; const isHost = p.id === hostId;
+        const safeName = escapeHTML(p.name);
+        const kickBtn = (myId === hostId && !isMe) ? `<button onclick="kickPlayer('${p.id}')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-weight:bold;font-size:14px;">✕</button>` : '';
+        const crown = isHost ? `<span class="host-badge">${ICON_CROWN}</span>` : '';
+        const row = document.createElement('div'); row.className = 'player-row';
+        row.innerHTML = `<div class="player-avatar" style="background:${p.avatarColor};">${safeName[0]}</div>
+          <div class="player-info"><div class="player-name"><span>${safeName}${crown}${isMe ? `<small style="color:var(--accent);font-size:10px;"> (${t('you')})</small>` : ''}</span>${kickBtn}</div>
+          <div class="player-pixels">${p.pixels} ${t('pixels_unit')}</div><div class="player-bar-bg"><div class="player-bar" style="width:${(p.pixels/maxPixels)*100}%;background:${p.avatarColor}"></div></div></div>`;
+        list.appendChild(row);
       });
     }
     function renderSpectators() {
       const list = document.getElementById('spectator-list');
       const toggleRow = document.getElementById('promotion-toggle-row');
       list.innerHTML = '';
-
       const spectatorListItems = Object.values(spectators);
       toggleRow.style.display = myId === hostId ? 'flex' : 'none';
-
       spectatorListItems.forEach(s => {
         const row = document.createElement('div');
         row.className = 'spectator-row';
-
         const promoteBtn = (myId === hostId && Object.keys(players).length < 6)
-          ? `<button class="promote-btn" onclick="promoteSpectator('${s.id}')">▲ OYUNCU YAP</button>`
+          ? `<button class="promote-btn" onclick="promoteSpectator('${s.id}')">${ICON_UP}${t('make_player')}</button>`
           : '';
-
-        row.innerHTML = `
-          <div class="spectator-name">👁️ <span>${s.name}</span></div>
-          ${promoteBtn}
-        `;
+        row.innerHTML = `<div class="spectator-name">${ICON_EYE}<span>${escapeHTML(s.name)}</span></div>${promoteBtn}`;
         list.appendChild(row);
       });
     }
-
-    function promoteSpectator(targetId) {
-      socket.emit('promote_spectator', targetId);
-    }
-
-    function kickPlayer(targetId) { if(confirm("Bu oyuncuyu odadan atmak istediğine emin misin?")) socket.emit('kick_player', targetId); }
+    function promoteSpectator(targetId) { socket.emit('promote_spectator', targetId); }
+    function kickPlayer(targetId) { if (confirm(t('confirm_kick'))) socket.emit('kick_player', targetId); }
 
     const palette = document.getElementById('palette');
     COLORS.forEach(color => {
@@ -1086,12 +840,15 @@
       btn.className = 'color-btn' + (color === selectedColor ? ' selected' : ''); btn.style.background = color;
       if (color === '#ffffff') btn.style.boxShadow = '0 0 0 1px #555 inset';
       btn.addEventListener('click', () => {
-        eraserActive = false; document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
-        document.getElementById('eraser-btn').classList.remove('selected'); btn.classList.add('selected'); selectedColor = color;
+        eraserActive = false;
+        document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
+        document.getElementById('eraser-btn').classList.remove('selected');
+        btn.classList.add('selected'); selectedColor = color;
       });
       palette.appendChild(btn);
     });
-    const eraserBtn = document.createElement('div'); eraserBtn.id = 'eraser-btn'; eraserBtn.textContent = '✕';
+    const eraserBtn = document.createElement('div'); eraserBtn.id = 'eraser-btn';
+    eraserBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 5 5L8 21H3v-5L16 3Z"/><path d="m12.5 6.5 5 5"/></svg>';
     eraserBtn.addEventListener('click', () => {
       eraserActive = !eraserActive; eraserBtn.classList.toggle('selected', eraserActive);
       if (eraserActive) document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
@@ -1100,11 +857,20 @@
 
     function copyLink(btn) {
       navigator.clipboard.writeText(window.location.href);
-      btn.textContent = '✓ KOPYALANDI'; setTimeout(() => btn.textContent = '🔗 LİNKİ KOPYALA', 2000);
+      const label = btn.querySelector('.copy-label');
+      const prev = label.textContent;
+      label.textContent = t('copied');
+      setTimeout(() => label.textContent = t('copy_link'), 2000);
     }
 
-    const MAX_CHAT_MESSAGES = 50;
+    // Galeriyi yeni sekmede aç (odayı kaybetmeden); ?from ile oda kodunu taşı ki
+    // galeride "Odaya Dön" çıksın ve sekmeyi kapatınca oda sekmesine dönülsün.
+    document.getElementById('room-gallery-link').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.open('/gallery?from=' + roomKod, 'gredart_gallery');
+    });
 
+    const MAX_CHAT_MESSAGES = 50;
     function sendMessage() {
       const input = document.getElementById('chatInput');
       const msg = input.value.trim();
@@ -1112,36 +878,22 @@
       socket.emit('send_message', msg);
       input.value = '';
     }
-
     document.getElementById('chatSendBtn').addEventListener('click', sendMessage);
-    document.getElementById('chatInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') sendMessage();
-    });
+    document.getElementById('chatInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
 
     socket.on('receive_message', (data) => {
       const box = document.getElementById('chatBox');
       const isMe = data.name === (players[myId]?.name);
-      
       const div = document.createElement('div');
       div.className = 'chat-msg' + (isMe ? ' mine' : '');
-      
       const nameSpan = document.createElement('span');
       nameSpan.className = 'chat-name';
-      nameSpan.textContent = data.name + ':';   // textContent = XSS safe
-      
+      nameSpan.textContent = data.name + ':';
       const msgSpan = document.createElement('span');
-      msgSpan.textContent = data.message;        // textContent = XSS safe
-      
-      div.appendChild(nameSpan);
-      div.appendChild(msgSpan);
+      msgSpan.textContent = data.message;
+      div.appendChild(nameSpan); div.appendChild(msgSpan);
       box.appendChild(div);
-
-      // Trim old messages to keep DOM lean
-      while (box.children.length > MAX_CHAT_MESSAGES) {
-        box.removeChild(box.firstChild);
-      }
-
-      // Auto-scroll to bottom
+      while (box.children.length > MAX_CHAT_MESSAGES) box.removeChild(box.firstChild);
       box.scrollTop = box.scrollHeight;
     });
   </script>

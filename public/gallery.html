@@ -3,156 +3,82 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GredArt - Galeri</title>
+  <title>GredArt — Galeri</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      background: #1b1f3b;
-      min-height: 100vh;
-      font-family: 'Segoe UI', sans-serif;
-      padding: 32px 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 32px;
+    :root {
+      --bg: #12152b; --surface: #1f2342; --surface-2: #262b4d; --border: #313869;
+      --accent: #43e8d8; --accent-2: #4ade80; --text: #eaeefb; --muted: #8b93b8;
     }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      background-image: radial-gradient(900px 500px at 50% -10%, rgba(67,232,216,0.10), transparent 60%);
+      min-height: 100vh; font-family: 'Inter', system-ui, sans-serif; color: var(--text);
+      padding: 32px 20px; display: flex; flex-direction: column; align-items: center; gap: 28px;
+    }
     .header { text-align: center; }
     h1 {
-      font-size: 36px;
-      font-weight: 800;
-      letter-spacing: 10px;
-      background: linear-gradient(135deg, #43e8d8, #4ade80);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      font-family: 'Sora', sans-serif; font-size: 34px; font-weight: 800; letter-spacing: -0.5px;
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
     }
-    .tagline { font-size: 12px; color: #4ade80; letter-spacing: 3px; opacity: 0.7; margin-top: 6px; }
+    .tagline { font-size: 12px; color: var(--accent); letter-spacing: 4px; font-weight: 600; opacity: 0.7; margin-top: 6px; }
 
     .back-btn {
-      background: #252a4a;
-      color: #43e8d8;
-      border: 1px solid #2e3460;
-      border-radius: 10px;
-      padding: 10px 20px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      letter-spacing: 1px;
-      text-decoration: none;
-      transition: background 0.2s;
+      display: inline-flex; align-items: center; gap: 7px;
+      background: var(--surface); color: var(--accent); border: 1px solid var(--border);
+      border-radius: 11px; padding: 10px 18px; font-size: 13px; font-weight: 600;
+      cursor: pointer; text-decoration: none; font-family: inherit; transition: background 0.2s;
     }
-    .back-btn:hover { background: #2e3460; }
+    .back-btn:hover { background: var(--surface-2); }
+    .back-btn svg { width: 15px; height: 15px; }
 
-    #gallery-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 20px;
-      width: 100%;
-      max-width: 1000px;
-    }
+    #gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; width: 100%; max-width: 1000px; }
+    .gallery-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; cursor: pointer; transition: transform 0.15s, border-color 0.2s; }
+    .gallery-card:hover { transform: translateY(-4px); border-color: var(--accent); }
+    .gallery-card canvas { width: 100%; display: block; image-rendering: pixelated; background: #fff; }
+    .card-meta { padding: 11px 13px; display: flex; flex-direction: column; gap: 4px; }
+    .card-room { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: 0.5px; }
+    .card-date { font-size: 11px; color: var(--muted); }
 
-    .gallery-card {
-      background: #252a4a;
-      border: 1px solid #2e3460;
-      border-radius: 14px;
-      overflow: hidden;
-      cursor: pointer;
-      transition: transform 0.15s, border-color 0.2s;
-    }
-    .gallery-card:hover { transform: translateY(-4px); border-color: #43e8d8; }
+    #empty-state { color: var(--muted); font-size: 14px; text-align: center; margin-top: 60px; display: none; line-height: 1.6; }
 
-    .gallery-card canvas {
-      width: 100%;
-      display: block;
-      image-rendering: pixelated;
-    }
-
-    .card-meta {
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .card-room { font-size: 13px; font-weight: 700; color: #e2e8f0; letter-spacing: 1px; }
-    .card-date { font-size: 11px; color: #6b7280; }
-
-    #empty-state {
-      color: #6b7280;
-      font-size: 14px;
-      text-align: center;
-      margin-top: 60px;
-      display: none;
-    }
-
-    /* Modal */
-    #modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(27, 31, 59, 0.9);
-      backdrop-filter: blur(6px);
-      z-index: 100;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
+    #modal-overlay { display: none; position: fixed; inset: 0; background: rgba(18,21,43,0.9); backdrop-filter: blur(6px); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
     #modal-overlay.open { display: flex; }
-
-    #modal-box {
-      background: #252a4a;
-      border: 1px solid #43e8d8;
-      border-radius: 20px;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      max-width: 480px;
-      width: 100%;
-    }
-
-    #modal-canvas {
-      width: 100%;
-      max-width: 384px;
-      image-rendering: pixelated;
-      border-radius: 8px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
-    }
-
+    #modal-box { background: var(--surface); border: 1px solid var(--accent); border-radius: 20px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; max-width: 480px; width: 100%; }
+    #modal-canvas { width: 100%; max-width: 384px; image-rendering: pixelated; border-radius: 8px; background: #fff; box-shadow: 0 8px 28px rgba(0,0,0,0.5); }
     #modal-meta { text-align: center; }
-    #modal-room { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 2px; }
-    #modal-date { font-size: 12px; color: #6b7280; margin-top: 4px; }
-
+    #modal-room { font-family: 'Sora', sans-serif; font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+    #modal-date { font-size: 12px; color: var(--muted); margin-top: 4px; }
     .modal-actions { display: flex; gap: 10px; }
     .modal-btn {
-      background: #2e3460;
-      color: #43e8d8;
-      border: none;
-      border-radius: 10px;
-      padding: 10px 18px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      letter-spacing: 1px;
-      transition: background 0.2s;
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--surface-2); color: var(--accent); border: 1px solid var(--border);
+      border-radius: 11px; padding: 10px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.2s;
     }
-    .modal-btn:hover { background: #3a4270; }
-    .modal-btn.primary { background: linear-gradient(135deg, #43e8d8, #4ade80); color: #1b1f3b; }
-    .modal-btn.primary:hover { opacity: 0.9; }
+    .modal-btn:hover { background: #2f366a; }
+    .modal-btn.primary { background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: #0c1024; border: none; }
+    .modal-btn.primary:hover { opacity: 0.92; }
+    .modal-btn svg { width: 15px; height: 15px; }
   </style>
 </head>
 <body>
 
   <div class="header">
     <h1>GredArt</h1>
-    <div class="tagline">GALERİ</div>
+    <div class="tagline" data-i18n="gallery_title">GALERİ</div>
   </div>
 
-  <a href="/" class="back-btn">← Ana Sayfa</a>
+  <a href="/" class="back-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m0 0 6 6m-6-6 6-6"/></svg>
+    <span data-i18n="home">Ana Sayfa</span>
+  </a>
 
   <div id="gallery-grid"></div>
-  <div id="empty-state">Henüz kaydedilmiş eser yok.<br>Süreli mod oynayarak ilk eseri sen ekle!</div>
+  <div id="empty-state"><span data-i18n="empty_gallery">Henüz kaydedilmiş eser yok.</span><br><span data-i18n="empty_gallery_sub">Süreli mod oynayarak ilk eseri sen ekle!</span></div>
 
   <div id="modal-overlay">
     <div id="modal-box">
@@ -162,21 +88,27 @@
         <div id="modal-date"></div>
       </div>
       <div class="modal-actions">
-        <button class="modal-btn" onclick="closeModal()">✕ Kapat</button>
-        <button class="modal-btn primary" id="modal-download-btn">🖼️ İndir</button>
+        <button class="modal-btn" onclick="closeModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          <span data-i18n="close">Kapat</span>
+        </button>
+        <button class="modal-btn primary" id="modal-download-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          <span data-i18n="download">İndir</span>
+        </button>
       </div>
     </div>
   </div>
 
+  <script src="/i18n.js"></script>
   <script>
-    const BOARD_SIZE = 32;
-
     function drawBoard(canvas, board) {
+      const size = board.length;
       const ctx = canvas.getContext('2d');
-      canvas.width = BOARD_SIZE;
-      canvas.height = BOARD_SIZE;
-      for (let y = 0; y < BOARD_SIZE; y++) {
-        for (let x = 0; x < BOARD_SIZE; x++) {
+      canvas.width = size;
+      canvas.height = size;
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
           ctx.fillStyle = board[y][x] || '#ffffff';
           ctx.fillRect(x, y, 1, 1);
         }
@@ -186,44 +118,29 @@
     function formatDate(str) {
       if (!str) return '';
       const d = new Date(str);
-      return d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return d.toLocaleDateString(LANG === 'tr' ? 'tr-TR' : 'en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
 
     async function loadGallery() {
       const res = await fetch('/api/gallery');
       const items = await res.json();
-
       const grid = document.getElementById('gallery-grid');
       const empty = document.getElementById('empty-state');
-
       if (!items.length) { empty.style.display = 'block'; return; }
 
       items.forEach(item => {
         const card = document.createElement('div');
         card.className = 'gallery-card';
-
         const canvas = document.createElement('canvas');
-        canvas.width = BOARD_SIZE;
-        canvas.height = BOARD_SIZE;
-
+        canvas.width = 32; canvas.height = 32;
         const meta = document.createElement('div');
         meta.className = 'card-meta';
-        meta.innerHTML = `
-          <div class="card-room">ODA: ${item.roomCode}</div>
-          <div class="card-date">${formatDate(item.createdAt)}</div>
-        `;
-
+        meta.innerHTML = `<div class="card-room">${t('room_label')}: ${item.roomCode}</div><div class="card-date">${formatDate(item.createdAt)}</div>`;
         card.appendChild(canvas);
         card.appendChild(meta);
         grid.appendChild(card);
-
-        // Load full board data on click
         card.addEventListener('click', () => openModal(item.id));
-
-        // Load thumbnail lazily
-        fetch('/api/gallery/' + item.id)
-          .then(r => r.json())
-          .then(data => drawBoard(canvas, data.board));
+        fetch('/api/gallery/' + item.id).then(r => r.json()).then(data => drawBoard(canvas, data.board));
       });
     }
 
@@ -233,16 +150,11 @@
     async function openModal(id) {
       const res = await fetch('/api/gallery/' + id);
       const data = await res.json();
-
       currentModalId = id;
       currentModalBoard = data.board;
-
-      const modalCanvas = document.getElementById('modal-canvas');
-      drawBoard(modalCanvas, data.board);
-
-      document.getElementById('modal-room').textContent = 'ODA: ' + data.roomCode;
+      drawBoard(document.getElementById('modal-canvas'), data.board);
+      document.getElementById('modal-room').textContent = t('room_label') + ': ' + data.roomCode;
       document.getElementById('modal-date').textContent = formatDate(data.createdAt);
-
       document.getElementById('modal-overlay').classList.add('open');
     }
 
@@ -254,14 +166,14 @@
 
     document.getElementById('modal-download-btn').addEventListener('click', () => {
       if (!currentModalBoard) return;
-      // Draw at 10x resolution for a crisp download
+      const size = currentModalBoard.length;
       const offscreen = document.createElement('canvas');
-      offscreen.width = BOARD_SIZE * 10;
-      offscreen.height = BOARD_SIZE * 10;
+      offscreen.width = size * 10;
+      offscreen.height = size * 10;
       const ctx = offscreen.getContext('2d');
       ctx.imageSmoothingEnabled = false;
-      for (let y = 0; y < BOARD_SIZE; y++) {
-        for (let x = 0; x < BOARD_SIZE; x++) {
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
           ctx.fillStyle = currentModalBoard[y][x] || '#ffffff';
           ctx.fillRect(x * 10, y * 10, 10, 10);
         }
@@ -272,14 +184,24 @@
       link.click();
     });
 
-    // Close modal on overlay click
     document.getElementById('modal-overlay').addEventListener('click', (e) => {
       if (e.target === document.getElementById('modal-overlay')) closeModal();
     });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
-    // Close modal on Escape
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeModal();
+    // Odadan gelindiyse (?from=KOD) geri butonu "Odaya Dön" olsun.
+    // i18n DOMContentLoaded'da uygulandığı için override'ı da orada yap.
+    document.addEventListener('DOMContentLoaded', () => {
+      const fromRoom = new URLSearchParams(location.search).get('from');
+      if (fromRoom && /^[a-z0-9]{6}$/i.test(fromRoom)) {
+        const backBtn = document.querySelector('.back-btn');
+        backBtn.querySelector('span').textContent = t('back_to_room');
+        backBtn.href = '/oda/' + fromRoom.toUpperCase();
+        backBtn.addEventListener('click', (e) => {
+          // Oda hâlâ açık sekmedeyse galeriyi kapat ve oraya dön
+          if (window.opener && !window.opener.closed) { e.preventDefault(); window.close(); }
+        });
+      }
     });
 
     loadGallery();

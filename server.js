@@ -18,7 +18,8 @@ const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 
 // Temel Ayarlar
-const BOARD_SIZE = 32;
+const ALLOWED_SIZES = [16, 32, 64];
+const DEFAULT_BOARD_SIZE = 32;
 const MAX_PLAYERS = 6;
 const GAME_DURATION = 180; // Süreli mod için 3 dakika (Saniye)
 
@@ -41,10 +42,12 @@ const sessions = {}; // { token: { name, avatarColor, pixels, roomKod, colorInde
 const lastPixelTime = {};
 
 // Oda Oluşturma Fonksiyonu
-function createRoom() {
+function createRoom(size) {
+  const boardSize = ALLOWED_SIZES.includes(size) ? size : DEFAULT_BOARD_SIZE;
   const kod = crypto.randomBytes(3).toString('hex').toUpperCase();
   rooms[kod] = {
-    board: Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill('#ffffff')),
+    boardSize,
+    board: Array(boardSize).fill(null).map(() => Array(boardSize).fill('#ffffff')),
     players: {},
     spectators: {},
     allowSpectatorPromotion: true,
@@ -83,6 +86,7 @@ setInterval(() => {
 }, 5 * 60 * 1000);
 
 // Statik Dosyalar ve Routing
+app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
@@ -110,7 +114,8 @@ app.post('/api/oda-kur', (req, res) => {
   }
 
   roomCreateTimes[ip] = now;
-  const kod = createRoom();
+  const size = parseInt(req.body && req.body.size);
+  const kod = createRoom(size);
   res.json({ kod });
 });
 
@@ -356,7 +361,7 @@ io.on('connection', (socket) => {
     if (!currentRoom) return;
     if (socket.id !== currentRoom.hostId) return; // Sadece host sıfırlayabilir
     
-    currentRoom.board = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill('#ffffff'));
+    currentRoom.board = Array(currentRoom.boardSize).fill(null).map(() => Array(currentRoom.boardSize).fill('#ffffff'));
     currentRoom.status = 'waiting';
     
     if (currentRoom.timerInterval) {
@@ -369,7 +374,7 @@ io.on('connection', (socket) => {
   });
 
   // 4. Piksel Çizimi
-  const PIXEL_COOLDOWN_MS = 900; // Slightly under client's 1000ms for tolerance
+  const PIXEL_COOLDOWN_MS = 350; // Slightly under client's 400ms for tolerance
 
   socket.on('place_pixel', ({ x, y, color }) => {
     if (!currentRoom || currentRoom.status !== 'playing') return;
@@ -382,7 +387,8 @@ io.on('connection', (socket) => {
     // --- Input validation ---
     if (typeof x !== 'number' || typeof y !== 'number') return;
     x = Math.floor(x); y = Math.floor(y);
-    if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE) return;
+    const size = currentRoom.boardSize;
+    if (x < 0 || x >= size || y < 0 || y >= size) return;
 
     // --- Color validation (must be a valid hex color) ---
     if (typeof color !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(color)) return;

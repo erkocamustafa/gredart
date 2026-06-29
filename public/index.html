@@ -3,172 +3,210 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GredArt Lobi</title>
+  <title>GredArt</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg: #12152b;
+      --surface: #1f2342;
+      --surface-2: #262b4d;
+      --border: #313869;
+      --accent: #43e8d8;
+      --accent-2: #4ade80;
+      --text: #eaeefb;
+      --muted: #8b93b8;
+      --danger: #ff6b6b;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background: #1b1f3b;
+      background: var(--bg);
+      background-image:
+        radial-gradient(900px 500px at 50% -10%, rgba(67,232,216,0.12), transparent 60%),
+        radial-gradient(700px 500px at 90% 110%, rgba(74,222,128,0.10), transparent 55%);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      font-family: 'Segoe UI', sans-serif;
-      gap: 32px;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: var(--text);
+      gap: 30px;
+      padding: 24px;
     }
 
-    .logo {
-      text-align: center;
-    }
-
+    .logo { text-align: center; }
     h1 {
-      font-size: 48px;
+      font-family: 'Sora', sans-serif;
+      font-size: 52px;
       font-weight: 800;
-      letter-spacing: 12px;
-      background: linear-gradient(135deg, #43e8d8, #4ade80);
+      letter-spacing: -1px;
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
       -webkit-background-clip: text;
+      background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-
     .tagline {
       font-size: 12px;
-      color: #4ade80;
-      letter-spacing: 3px;
-      opacity: 0.7;
-      margin-top: 6px;
+      color: var(--accent);
+      letter-spacing: 4px;
+      font-weight: 600;
+      opacity: 0.75;
+      margin-top: 8px;
     }
 
     .card {
-      background: #252a4a;
-      border: 1px solid #2e3460;
-      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent), var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 22px;
       padding: 28px;
-      width: 340px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      width: 360px;
+      max-width: 100%;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.45);
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 18px;
     }
 
-    .card-title {
+    .label {
       font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      color: #43e8d8;
-      opacity: 0.7;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #43e8d8, #4ade80);
-      color: #1b1f3b;
-      border: none;
-      border-radius: 12px;
-      padding: 14px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      letter-spacing: 1px;
-      transition: opacity 0.2s, transform 0.1s;
-    }
-
-    .btn-primary:hover { opacity: 0.9; transform: scale(1.02); }
-    .btn-primary:active { transform: scale(0.98); }
-
-    .divider {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      color: #3a4060;
-      font-size: 12px;
-    }
-
-    .divider::before, .divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: #2e3460;
-    }
-
-    .input-row {
-      display: flex;
-      gap: 8px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      text-transform: uppercase;
     }
 
     input {
-      flex: 1;
-      background: #1b1f3b;
-      border: 1px solid #2e3460;
-      border-radius: 10px;
-      padding: 12px 14px;
-      color: white;
-      font-size: 16px;
-      font-family: 'Segoe UI', sans-serif;
-      letter-spacing: 3px;
-      text-transform: uppercase;
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 13px 15px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
       outline: none;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
+    input::placeholder { color: #565d82; }
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(67,232,216,0.15); }
 
-    input::placeholder {
-      letter-spacing: 1px;
-      text-transform: none;
-      color: #3a4060;
+    .field { display: flex; flex-direction: column; gap: 9px; }
+
+    /* Tuval boyutu seçici */
+    .size-select { display: flex; gap: 8px; }
+    .size-opt {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
     }
+    .size-opt:hover { border-color: #475089; }
+    .size-opt.active { border-color: var(--accent); background: rgba(67,232,216,0.10); }
+    .size-opt .dim { font-weight: 700; font-size: 14px; color: var(--text); }
+    .size-opt .nm { font-size: 10px; color: var(--muted); margin-top: 2px; letter-spacing: 0.5px; }
+    .size-opt.active .dim { color: var(--accent); }
 
-    input:focus { border-color: #43e8d8; }
+    .btn-primary {
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
+      color: #0c1024;
+      border: none;
+      border-radius: 13px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.08s, box-shadow 0.2s;
+      box-shadow: 0 8px 20px rgba(67,232,216,0.20);
+    }
+    .btn-primary:hover { opacity: 0.95; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.6; cursor: default; transform: none; }
+
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .input-row { display: flex; gap: 8px; }
+    .input-row input { letter-spacing: 3px; text-transform: uppercase; }
+    .input-row input::placeholder { letter-spacing: 0.5px; text-transform: none; }
 
     .btn-secondary {
-      background: #2e3460;
-      color: #43e8d8;
-      border: none;
-      border-radius: 10px;
-      padding: 12px 16px;
+      background: var(--surface-2);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 18px;
       font-size: 14px;
-      font-weight: 700;
+      font-weight: 600;
+      font-family: inherit;
       cursor: pointer;
       transition: background 0.2s;
     }
+    .btn-secondary:hover { background: #2f366a; }
 
-    .btn-secondary:hover { background: #3a4270; }
+    #error-msg { font-size: 12.5px; color: var(--danger); min-height: 16px; text-align: center; }
 
-    #error-msg {
-      font-size: 12px;
-      color: #e63946;
-      min-height: 16px;
+    .gallery-link {
       text-align: center;
+      font-size: 12px;
+      color: var(--accent);
+      opacity: 0.8;
+      letter-spacing: 1px;
+      text-decoration: none;
+      font-weight: 600;
     }
+    .gallery-link:hover { opacity: 1; }
   </style>
 </head>
 <body>
 
   <div class="logo">
     <h1>GredArt</h1>
-    <div class="tagline">BERABER ÇİZ</div>
+    <div class="tagline" data-i18n="tagline">BERABER ÇİZ</div>
   </div>
 
   <div class="card">
-    <div class="card-title">KİMLİĞİN</div>
-    <input type="text" id="name-input" placeholder="Oyun içi adın (Zorunlu)" maxlength="12" />
-
-    <div class="divider"></div>
-
-    <div class="card-title">YENİ ODA</div>
-    <button class="btn-primary" id="create-btn">Oda Kur</button>
-
-    <div class="divider">veya</div>
-
-    <div class="card-title">ODAYA KATIL</div>
-    <div class="input-row">
-      <input type="text" id="kod-input" placeholder="Oda kodu" maxlength="6" style="text-transform: uppercase;" />
-      <button class="btn-secondary" id="join-btn">Gir</button>
+    <div class="field">
+      <span class="label" data-i18n="your_name">ADIN</span>
+      <input type="text" id="name-input" data-i18n-ph="name_ph" maxlength="12" />
     </div>
+
+    <div class="field">
+      <span class="label" data-i18n="canvas_size">TUVAL BOYUTU</span>
+      <div class="size-select" id="size-select">
+        <div class="size-opt" data-size="16"><div class="dim">16×16</div><div class="nm">S</div></div>
+        <div class="size-opt active" data-size="32"><div class="dim">32×32</div><div class="nm">M</div></div>
+        <div class="size-opt" data-size="64"><div class="dim">64×64</div><div class="nm">L</div></div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="create-btn" data-i18n="create_room">Oda Kur</button>
+
+    <div class="divider"><span data-i18n="or">veya</span></div>
+
+    <div class="field">
+      <span class="label" data-i18n="join_room">ODAYA KATIL</span>
+      <div class="input-row">
+        <input type="text" id="kod-input" data-i18n-ph="room_code_ph" maxlength="6" />
+        <button class="btn-secondary" id="join-btn" data-i18n="join">Gir</button>
+      </div>
+    </div>
+
     <div id="error-msg"></div>
-    <div style="text-align:center; margin-top:4px;">
-      <a href="/gallery" style="font-size:12px; color:#43e8d8; opacity:0.7; letter-spacing:1px; text-decoration:none;">🖼️ GALERİYİ GÖRÜNTÜLE</a>
-    </div>
+    <a href="/gallery" class="gallery-link" data-i18n="gallery_link">GALERİYİ GÖRÜNTÜLE</a>
   </div>
 
+  <script src="/i18n.js"></script>
   <script>
     const nameInput = document.getElementById('name-input');
     const createBtn = document.getElementById('create-btn');
@@ -176,52 +214,66 @@
     const kodInput = document.getElementById('kod-input');
     const errorMsg = document.getElementById('error-msg');
 
-    // Eğer daha önce isim girdiyse, hafızadan kutuya doldur
     if (localStorage.getItem('gredartName')) {
       nameInput.value = localStorage.getItem('gredartName');
     }
 
+    // Tuval boyutu seçimi
+    let selectedSize = 32;
+    document.getElementById('size-select').addEventListener('click', (e) => {
+      const opt = e.target.closest('.size-opt');
+      if (!opt) return;
+      document.querySelectorAll('.size-opt').forEach((o) => o.classList.remove('active'));
+      opt.classList.add('active');
+      selectedSize = parseInt(opt.dataset.size);
+    });
+
     function checkName() {
       const name = nameInput.value.trim().toUpperCase();
       if (!name) {
-        errorMsg.textContent = 'Lütfen önce bir ad gir!';
+        errorMsg.textContent = t('err_name');
         return null;
       }
       localStorage.setItem('gredartName', name);
       return name;
     }
-    
+
     createBtn.addEventListener('click', async () => {
       if (!checkName()) return;
 
-      createBtn.textContent = 'Kuruluyor...';
+      createBtn.textContent = t('creating');
       createBtn.disabled = true;
 
       try {
-        const res = await fetch('/api/oda-kur', { method: 'POST' });
+        const res = await fetch('/api/oda-kur', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ size: selectedSize }),
+        });
         const data = await res.json();
         if (!res.ok) {
-          errorMsg.textContent = data.error || 'Oda kurulamadı, tekrar dene.';
-          createBtn.textContent = 'Oda Kur';
+          errorMsg.textContent = data.error || t('err_create');
+          createBtn.textContent = t('create_room');
           createBtn.disabled = false;
           return;
         }
         window.location.href = '/oda/' + data.kod;
       } catch (err) {
-        errorMsg.textContent = 'Bağlantı hatası, tekrar dene.';
-        createBtn.textContent = 'Oda Kur';
+        errorMsg.textContent = t('err_conn');
+        createBtn.textContent = t('create_room');
         createBtn.disabled = false;
       }
     });
 
     joinBtn.addEventListener('click', () => katil());
+    kodInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') katil(); });
 
     async function katil() {
       if (!checkName()) return;
 
       const kod = kodInput.value.trim().toUpperCase();
       if (kod.length !== 6) {
-        errorMsg.textContent = 'Kod 6 karakter olmalı.';
+        errorMsg.textContent = t('err_code_len');
         return;
       }
 
@@ -229,18 +281,15 @@
       const data = await res.json();
 
       if (!data.exists) {
-        errorMsg.textContent = 'Böyle bir oda bulunamadı.';
+        errorMsg.textContent = t('err_not_found');
         return;
       }
-
       if (data.playerCount >= data.maxPlayers) {
-        errorMsg.textContent = 'Bu oda dolu (maksimum 6 kişi).';
+        errorMsg.textContent = t('err_full');
         return;
       }
-
       window.location.href = '/oda/' + kod;
     }
   </script>
-
 </body>
 </html>
